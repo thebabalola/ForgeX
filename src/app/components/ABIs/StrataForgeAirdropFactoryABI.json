@@ -1,7 +1,11 @@
 [
   {
     "inputs": [
-      { "internalType": "address", "name": "_adminContract", "type": "address" }
+      {
+        "internalType": "address",
+        "name": "_adminContract",
+        "type": "address"
+      }
     ],
     "stateMutability": "nonpayable",
     "type": "constructor"
@@ -76,36 +80,86 @@
     "type": "function"
   },
   {
-    "inputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
     "name": "airdrops",
     "outputs": [
-      { "internalType": "address", "name": "distributor", "type": "address" },
-      { "internalType": "address", "name": "token", "type": "address" },
-      { "internalType": "address", "name": "creator", "type": "address" },
-      { "internalType": "uint32", "name": "startTime", "type": "uint32" },
-      { "internalType": "uint32", "name": "totalRecipients", "type": "uint32" },
-      { "internalType": "uint32", "name": "dropAmount", "type": "uint32" },
-      { "internalType": "uint8", "name": "tokenType", "type": "uint8" },
-      { "internalType": "uint8", "name": "reserved", "type": "uint8" }
+      {
+        "internalType": "address",
+        "name": "distributor",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "creator",
+        "type": "address"
+      },
+      {
+        "internalType": "uint32",
+        "name": "startTime",
+        "type": "uint32"
+      },
+      {
+        "internalType": "uint32",
+        "name": "totalRecipients",
+        "type": "uint32"
+      },
+      {
+        "internalType": "uint256",
+        "name": "dropAmount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint8",
+        "name": "tokenType",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint8",
+        "name": "reserved",
+        "type": "uint8"
+      }
     ],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [
-      { "internalType": "address[]", "name": "tokens", "type": "address[]" },
+      {
+        "internalType": "address[]",
+        "name": "tokens",
+        "type": "address[]"
+      },
       {
         "internalType": "bytes32[]",
         "name": "merkleRoots",
         "type": "bytes32[]"
       },
-      { "internalType": "uint32[]", "name": "dropAmounts", "type": "uint32[]" },
+      {
+        "internalType": "uint256[]",
+        "name": "dropAmounts",
+        "type": "uint256[]"
+      },
       {
         "internalType": "uint32[]",
         "name": "totalRecipients",
         "type": "uint32[]"
       },
-      { "internalType": "uint32[]", "name": "startTimes", "type": "uint32[]" }
+      {
+        "internalType": "uint32[]",
+        "name": "startTimes",
+        "type": "uint32[]"
+      }
     ],
     "name": "batchCreateERC20Airdrops",
     "outputs": [
@@ -120,56 +174,152 @@
   },
   {
     "inputs": [
-      { "internalType": "address", "name": "token", "type": "address" },
-      { "internalType": "bytes32", "name": "merkleRoot", "type": "bytes32" },
-      { "internalType": "uint256", "name": "tokenId", "type": "uint256" },
-      { "internalType": "uint32", "name": "dropAmount", "type": "uint32" },
-      { "internalType": "uint32", "name": "totalRecipients", "type": "uint32" },
-      { "internalType": "uint32", "name": "startTime", "type": "uint32" }
+      {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "merkleRoot",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "uint256",
+        "name": "tokenId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "dropAmount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint32",
+        "name": "totalRecipients",
+        "type": "uint32"
+      },
+      {
+        "internalType": "uint32",
+        "name": "startTime",
+        "type": "uint32"
+      }
     ],
     "name": "createERC1155Airdrop",
-    "outputs": [{ "internalType": "address", "name": "", "type": "address" }],
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
     "stateMutability": "payable",
     "type": "function"
   },
   {
     "inputs": [
-      { "internalType": "address", "name": "token", "type": "address" },
-      { "internalType": "bytes32", "name": "merkleRoot", "type": "bytes32" },
-      { "internalType": "uint32", "name": "dropAmount", "type": "uint32" },
-      { "internalType": "uint32", "name": "totalRecipients", "type": "uint32" },
-      { "internalType": "uint32", "name": "startTime", "type": "uint32" }
+      {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "merkleRoot",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "uint256",
+        "name": "dropAmount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint32",
+        "name": "totalRecipients",
+        "type": "uint32"
+      },
+      {
+        "internalType": "uint32",
+        "name": "startTime",
+        "type": "uint32"
+      }
     ],
     "name": "createERC20Airdrop",
-    "outputs": [{ "internalType": "address", "name": "", "type": "address" }],
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
     "stateMutability": "payable",
     "type": "function"
   },
   {
     "inputs": [
-      { "internalType": "address", "name": "token", "type": "address" },
-      { "internalType": "bytes32", "name": "merkleRoot", "type": "bytes32" },
-      { "internalType": "uint256[]", "name": "tokenIds", "type": "uint256[]" },
-      { "internalType": "uint32", "name": "startTime", "type": "uint32" }
+      {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "merkleRoot",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "uint256[]",
+        "name": "tokenIds",
+        "type": "uint256[]"
+      },
+      {
+        "internalType": "uint32",
+        "name": "startTime",
+        "type": "uint32"
+      }
     ],
     "name": "createERC721Airdrop",
-    "outputs": [{ "internalType": "address", "name": "", "type": "address" }],
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
     "stateMutability": "payable",
     "type": "function"
   },
   {
     "inputs": [
-      { "internalType": "address", "name": "", "type": "address" },
-      { "internalType": "uint256", "name": "", "type": "uint256" }
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
     ],
     "name": "creatorAirdrops",
-    "outputs": [{ "internalType": "uint32", "name": "", "type": "uint32" }],
+    "outputs": [
+      {
+        "internalType": "uint32",
+        "name": "",
+        "type": "uint32"
+      }
+    ],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [
-      { "internalType": "uint256", "name": "limit", "type": "uint256" }
+      {
+        "internalType": "uint256",
+        "name": "limit",
+        "type": "uint256"
+      }
     ],
     "name": "getActiveAirdrops",
     "outputs": [
@@ -180,17 +330,41 @@
             "name": "distributor",
             "type": "address"
           },
-          { "internalType": "address", "name": "token", "type": "address" },
-          { "internalType": "address", "name": "creator", "type": "address" },
-          { "internalType": "uint32", "name": "startTime", "type": "uint32" },
+          {
+            "internalType": "address",
+            "name": "token",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "creator",
+            "type": "address"
+          },
+          {
+            "internalType": "uint32",
+            "name": "startTime",
+            "type": "uint32"
+          },
           {
             "internalType": "uint32",
             "name": "totalRecipients",
             "type": "uint32"
           },
-          { "internalType": "uint32", "name": "dropAmount", "type": "uint32" },
-          { "internalType": "uint8", "name": "tokenType", "type": "uint8" },
-          { "internalType": "uint8", "name": "reserved", "type": "uint8" }
+          {
+            "internalType": "uint256",
+            "name": "dropAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint8",
+            "name": "tokenType",
+            "type": "uint8"
+          },
+          {
+            "internalType": "uint8",
+            "name": "reserved",
+            "type": "uint8"
+          }
         ],
         "internalType": "struct StrataForgeAirdropFactory.AirdropInfo[]",
         "name": "",
@@ -203,13 +377,23 @@
   {
     "inputs": [],
     "name": "getAirdropCount",
-    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [
-      { "internalType": "address", "name": "creator", "type": "address" }
+      {
+        "internalType": "address",
+        "name": "creator",
+        "type": "address"
+      }
     ],
     "name": "getCreatorAirdrops",
     "outputs": [
@@ -220,17 +404,41 @@
             "name": "distributor",
             "type": "address"
           },
-          { "internalType": "address", "name": "token", "type": "address" },
-          { "internalType": "address", "name": "creator", "type": "address" },
-          { "internalType": "uint32", "name": "startTime", "type": "uint32" },
+          {
+            "internalType": "address",
+            "name": "token",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "creator",
+            "type": "address"
+          },
+          {
+            "internalType": "uint32",
+            "name": "startTime",
+            "type": "uint32"
+          },
           {
             "internalType": "uint32",
             "name": "totalRecipients",
             "type": "uint32"
           },
-          { "internalType": "uint32", "name": "dropAmount", "type": "uint32" },
-          { "internalType": "uint8", "name": "tokenType", "type": "uint8" },
-          { "internalType": "uint8", "name": "reserved", "type": "uint8" }
+          {
+            "internalType": "uint256",
+            "name": "dropAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint8",
+            "name": "tokenType",
+            "type": "uint8"
+          },
+          {
+            "internalType": "uint8",
+            "name": "reserved",
+            "type": "uint8"
+          }
         ],
         "internalType": "struct StrataForgeAirdropFactory.AirdropInfo[]",
         "name": "",
@@ -242,7 +450,11 @@
   },
   {
     "inputs": [
-      { "internalType": "address", "name": "_adminContract", "type": "address" }
+      {
+        "internalType": "address",
+        "name": "_adminContract",
+        "type": "address"
+      }
     ],
     "name": "updateAdminContract",
     "outputs": [],

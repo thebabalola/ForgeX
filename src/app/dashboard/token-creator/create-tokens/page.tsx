@@ -12,29 +12,14 @@ import StrataForgeAdminABI from "../../../../app/components/ABIs/StrataForgeAdmi
 import StrataForgeFactoryABI from "../../../../app/components/ABIs/StrataForgeFactoryABI.json";
 import DashboardLayout from "../DashboardLayout";
 import { useRouter } from "next/navigation";
+import { useUsdEthPrice } from "../../../../hooks/useUsdEthPrice"; // Import Moralis hook
 
 const ADMIN_CONTRACT_ADDRESS =
-  "0xBD8e7980DCFA4E41873D90046f77Faa90A068cAd" as const;
+  "0xFEc4e9718B1dfef72Db183f3e30b418762B674C4" as const;
 const FACTORY_CONTRACT_ADDRESS =
-  "0xEaAf43B8C19B1E0CdEc61C8170A446BAc5F79954" as const;
+  "0x676EA6F52b4f27a164DaC428247e3458b74754b9" as const;
 const adminABI = StrataForgeAdminABI as Abi;
 const factoryABI = StrataForgeFactoryABI as Abi;
-
-const CHAINLINK_ABI = [
-  {
-    inputs: [],
-    name: "latestRoundData",
-    outputs: [
-      { name: "roundId", type: "uint80" },
-      { name: "answer", type: "int256" },
-      { name: "startedAt", type: "uint256" },
-      { name: "updatedAt", type: "uint256" },
-      { name: "answeredInRound", type: "uint80" },
-    ],
-    stateMutability: "view",
-    type: "function",
-  },
-] as const;
 
 interface TokenData {
   id?: number;
@@ -77,50 +62,92 @@ const tokenTypes = [
 
 const featureOptions: { [key: number]: { label: string; value: string }[] } = {
   0: [
-    { label: "Mintable", value: "mint" },
-    { label: "Burnable", value: "burn" },
-    { label: "Pausable", value: "pause" },
-    { label: "Transferable", value: "transfer" },
-    { label: "Approvable", value: "approve" },
-    { label: "TransferFrom", value: "transferFrom" },
+    { label: "Mint", value: "mint" },
+    { label: "Burn", value: "burn" },
+    { label: "Pause", value: "pause" },
+    { label: "Transfer", value: "transfer" },
+    { label: "Approve", value: "approve" },
+    { label: "Transfer From", value: "transferFrom" },
+    { label: "Increase Allowance", value: "increaseAllowance" },
+    { label: "Decrease Allowance", value: "decreaseAllowance" },
+    { label: "Burn From", value: "burnFrom" },
+    { label: "Permit", value: "permit" },
+    { label: "Grant Role", value: "grantRole" },
+    { label: "Revoke Role", value: "revokeRole" },
+    { label: "Renounce Role", value: "renounceRole" },
+    { label: "Transfer Ownership", value: "transferOwnership" },
+    { label: "Renounce Ownership", value: "renounceOwnership" },
   ],
   1: [
-    { label: "Mintable", value: "mint" },
+    { label: "Mint", value: "mint" },
     { label: "Mint with URI", value: "mintWithURI" },
-    { label: "Burnable", value: "burn" },
-    { label: "Pausable", value: "pause" },
+    { label: "Burn", value: "burn" },
+    { label: "Pause", value: "pause" },
     { label: "Set Base URI", value: "setBaseURI" },
-    { label: "Approvable", value: "approve" },
+    { label: "Approve", value: "approve" },
+    { label: "Safe Mint", value: "safeMint" },
+    { label: "Safe Mint with URI", value: "safeMintWithURI" },
+    { label: "Set Approval For All", value: "setApprovalForAll" },
+    { label: "Transfer From", value: "transferFrom" },
+    { label: "Safe Transfer From", value: "safeTransferFrom" },
+    { label: "Safe Transfers From", value: "safeTransfersFrom" },
+    { label: "Set Token URI", value: "setTokenURI" },
+    { label: "Grant Role", value: "grantRole" },
+    { label: "Revoke Role", value: "revokeRole" },
+    { label: "Renounce Role", value: "renounceRole" },
+    { label: "Transfer Ownership", value: "transferOwnership" },
+    { label: "Renounce Ownership", value: "renounceOwnership" },
   ],
   2: [
-    { label: "Mintable", value: "mint" },
-    { label: "Burnable", value: "burn" },
-    { label: "Pausable", value: "pause" },
+    { label: "Mint", value: "mint" },
+    { label: "Burn", value: "burn" },
+    { label: "Pause", value: "pause" },
     { label: "Set URI", value: "setURI" },
     { label: "Set Token URI", value: "setTokenURI" },
-    { label: "Transferable", value: "safeTransferFrom" },
+    { label: "Safe Transfer From", value: "safeTransferFrom" },
     { label: "Set Approval For All", value: "setApprovalForAll" },
+    { label: "Mint Batch", value: "mintBatch" },
+    { label: "Burn Batch", value: "burnBatch" },
+    { label: "Safe Batch Transfer From", value: "safeBatchTransferFrom" },
+    { label: "Grant Role", value: "grantRole" },
+    { label: "Revoke Role", value: "revokeRole" },
+    { label: "Renounce Role", value: "renounceRole" },
+    { label: "Transfer Ownership", value: "transferOwnership" },
+    { label: "Renounce Ownership", value: "renounceOwnership" },
   ],
   3: [
-    { label: "Mintable", value: "mint" },
-    { label: "Burnable", value: "burn" },
-    { label: "Pausable", value: "pause" },
+    { label: "Mint", value: "mint" },
+    { label: "Burn", value: "burn" },
+    { label: "Pause", value: "pause" },
     { label: "Set Max Wallet Size", value: "setMaxWalletSize" },
     { label: "Set Max Transaction Amount", value: "setMaxTransactionAmount" },
     { label: "Exclude From Limits", value: "excludeFromLimits" },
-    { label: "Transferable", value: "transfer" },
-    { label: "Approvable", value: "approve" },
+    { label: "Transfer", value: "transfer" },
+    { label: "Approve", value: "approve" },
+    { label: "Transfer From", value: "transferFrom" },
+    { label: "Increase Allowance", value: "increaseAllowance" },
+    { label: "Decrease Allowance", value: "decreaseAllowance" },
+    { label: "Burn From", value: "burnFrom" },
+    { label: "Grant Role", value: "grantRole" },
+    { label: "Revoke Role", value: "revokeRole" },
+    { label: "Transfer Ownership", value: "transferOwnership" },
   ],
   4: [
-    { label: "Mintable", value: "mint" },
-    { label: "Redeemable", value: "redeem" },
-    { label: "Burnable", value: "burn" },
-    { label: "Pausable", value: "pause" },
+    { label: "Mint", value: "mint" },
+    { label: "Redeem", value: "redeem" },
+    { label: "Burn", value: "burn" },
+    { label: "Pause", value: "pause" },
     { label: "Set Collateral Ratio", value: "setCollateralRatio" },
     { label: "Set Fees", value: "setFees" },
     { label: "Set Treasury", value: "setTreasury" },
-    { label: "Transferable", value: "transfer" },
-    { label: "Approvable", value: "approve" },
+    { label: "Transfer", value: "transfer" },
+    { label: "Approve", value: "approve" },
+    { label: "Transfer From", value: "transferFrom" },
+    { label: "Increase Allowance", value: "increaseAllowance" },
+    { label: "Decrease Allowance", value: "decreaseAllowance" },
+    { label: "Burn From", value: "burnFrom" },
+    { label: "Grant Role", value: "grantRole" },
+    { label: "Transfer Ownership", value: "transferOwnership" },
   ],
 };
 
@@ -147,6 +174,13 @@ const CreateTokensPage = () => {
     features: [] as string[],
   });
 
+  // Moralis hook for ETH price
+  const {
+    usdPrice: ethPrice,
+    loading: ethPriceLoading,
+    error: ethPriceError,
+  } = useUsdEthPrice();
+
   // Wagmi hooks
   const {
     writeContract,
@@ -161,7 +195,7 @@ const CreateTokensPage = () => {
     hash: txHash,
   });
 
-  // Fetch feature fee
+  // Fetch feature fee in USD
   const {
     data: featureFee,
     error: featureFeeError,
@@ -169,40 +203,8 @@ const CreateTokensPage = () => {
   } = useReadContract({
     address: ADMIN_CONTRACT_ADDRESS,
     abi: adminABI,
-    functionName: "featureFee",
+    functionName: "featureFeeUSD", // UPDATED: Fetching USD value directly as per the admin file pattern
     query: { enabled: isConnected, retry: 3, retryDelay: 1000 },
-  });
-
-  // Fetch priceFeed address
-  const {
-    data: contractState,
-    error: contractStateError,
-    isLoading: contractStateLoading,
-  } = useReadContracts({
-    contracts: [
-      {
-        address: ADMIN_CONTRACT_ADDRESS,
-        abi: adminABI,
-        functionName: "priceFeed",
-      },
-    ],
-    query: { enabled: isConnected, retry: 3, retryDelay: 1000 },
-  });
-
-  // Fetch ETH/USD price from Chainlink
-  const {
-    data: priceData,
-    error: priceError,
-    isLoading: priceLoading,
-  } = useReadContract({
-    address: contractState?.[0]?.result as `0x${string}` | undefined,
-    abi: CHAINLINK_ABI,
-    functionName: "latestRoundData",
-    query: {
-      enabled: isConnected && !!contractState?.[0]?.result,
-      retry: 3,
-      retryDelay: 1000,
-    },
   });
 
   // Fetch total token count
@@ -269,8 +271,7 @@ const CreateTokensPage = () => {
   useEffect(() => {
     const errors: string[] = [];
     if (featureFeeError) errors.push("Failed to load feature fee");
-    if (contractStateError) errors.push("Failed to load contract state");
-    if (priceError) errors.push("Failed to load ETH/USD price");
+    if (ethPriceError) errors.push("Failed to load ETH/USD price"); // Moralis error handling
     if (tokenCountError) errors.push("Failed to load token count");
     if (writeError) {
       const errorMessage = writeError.message.includes("InvalidName")
@@ -303,14 +304,15 @@ const CreateTokensPage = () => {
         ? "Insufficient collateral deposited"
         : writeError.message.includes("InvalidFees")
         ? "Invalid mint or redeem fees"
+        : writeError.message.includes("AlreadyInitialized")
+        ? "Token already initialized"
         : "Transaction failed";
       errors.push(errorMessage);
     }
     setError(errors.join(", "));
     if (
       !featureFeeLoading &&
-      !contractStateLoading &&
-      !priceLoading &&
+      !ethPriceLoading && // Moralis loading state
       !tokenCountLoading &&
       !isTxConfirming
     ) {
@@ -319,13 +321,11 @@ const CreateTokensPage = () => {
     }
   }, [
     featureFeeError,
-    contractStateError,
-    priceError,
+    ethPriceError, // Moralis error handling
     tokenCountError,
     writeError,
     featureFeeLoading,
-    contractStateLoading,
-    priceLoading,
+    ethPriceLoading, // Moralis loading state
     tokenCountLoading,
     isTxConfirming,
   ]);
@@ -408,11 +408,9 @@ const CreateTokensPage = () => {
     });
   };
 
-  // Convert USD to ETH with buffer for gas fees, inspired by ManageSubscription
+  // Convert USD to ETH with buffer for gas fees (Using Moralis price)
   const usdToEthWithBuffer = (usdAmount: bigint, featureCount: number) => {
-    if (!priceData || !priceData[1])
-      return { display: "N/A", value: BigInt(0) };
-    const ethPrice = Number(priceData[1]) / 1e8; // Chainlink returns price with 8 decimals
+    if (!ethPrice) return { display: "N/A", value: BigInt(0) };
     const usd = (Number(usdAmount) / 1e8) * featureCount; // Fees are in 8 decimals
     const ethAmount = usd / ethPrice;
     // Add 10% buffer for gas fees and price fluctuations
@@ -455,6 +453,10 @@ const CreateTokensPage = () => {
     } = formData;
     if (!tokenType) {
       setError("Token type is required");
+      return;
+    }
+    if (!address) {
+      setError("Wallet not connected");
       return;
     }
 
@@ -563,6 +565,13 @@ const CreateTokensPage = () => {
       return;
     }
 
+    console.log("Transaction args:", {
+      functionName,
+      args,
+      featureCount: featureArray.length,
+      value: ethDetails.value.toString(),
+    });
+
     setIsTxPending(true);
     writeContract(
       {
@@ -570,18 +579,21 @@ const CreateTokensPage = () => {
         abi: factoryABI,
         functionName,
         args,
-        value: ethDetails.value, // Send buffered ETH to factory contract
+        value: ethDetails.value,
       },
       {
         onSuccess: (hash: `0x${string}`) => {
           setTxHash(hash);
-          // Store featureArray in localStorage to pass to manage-token page
           localStorage.setItem(
             `tokenFeatures_${tokenTypeNum}`,
             JSON.stringify(featureArray)
           );
         },
-        onError: () => setIsTxPending(false),
+        onError: (err) => {
+          console.error("Write contract error:", err);
+          setError(err.message || "Transaction failed");
+          setIsTxPending(false);
+        },
       }
     );
   };
@@ -595,7 +607,7 @@ const CreateTokensPage = () => {
       <div className="absolute top-1/3 left-1/4 w-16 h-16 border border-cyan-500/10 rotate-45"></div>
       <div className="absolute bottom-1/4 right-1/3 w-28 h-28 border border-purple-300/8 rounded-full"></div>
       <div className="absolute top-10 right-1/3 w-64 h-64 bg-gradient-to-br from-purple-500/3 to-transparent rounded-full blur-3xl"></div>
-      <div className="absolute bottom-20 left-1/4 w-80 h-80 bg-gradient-to-tr from-blue-500/3 to-transparent rounded-full blur-2xl"></div>
+      <div className="absolute bottom-20 left-1/4 w-80 h-80 bg-gradient-to-tr from-blue-500/3 to-transparent rounded-full blur-3xl"></div>
     </div>
   );
 

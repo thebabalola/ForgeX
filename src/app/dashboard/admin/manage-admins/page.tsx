@@ -12,7 +12,7 @@ import StrataForgeAdminABI from "../../../../app/components/ABIs/StrataForgeAdmi
 import AdminDashboardLayout from "../AdminDashboardLayout";
 
 const ADMIN_CONTRACT_ADDRESS =
-  "0xBD8e7980DCFA4E41873D90046f77Faa90A068cAd" as const;
+  "0xFEc4e9718B1dfef72Db183f3e30b418762B674C4" as const;
 const adminABI = StrataForgeAdminABI as Abi;
 
 const ManageAdmins = () => {
@@ -280,7 +280,8 @@ const ManageAdmins = () => {
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-gray-400">Network:</span>
-              <span className="font-mono text-gray-300">Base Sepolia</span>
+              {/* <span className="font-mono text-gray-300">Base Sepolia</span> */}
+              <span className="font-mono text-gray-300">Lisk Sepolia</span>
             </div>
             {error && (
               <>

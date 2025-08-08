@@ -8,7 +8,7 @@ import { Abi } from "viem";
 import StrataForgeAdminABI from "../../../app/components/ABIs/StrataForgeAdminABI.json";
 
 const ADMIN_CONTRACT_ADDRESS =
-  "0xBD8e7980DCFA4E41873D90046f77Faa90A068cAd" as const;
+  "0xFEc4e9718B1dfef72Db183f3e30b418762B674C4" as const;
 const adminABI = StrataForgeAdminABI as Abi;
 
 interface SidebarLinkProps {

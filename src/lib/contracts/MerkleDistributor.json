@@ -12,19 +12,34 @@
         "type": "bytes32"
       },
       {
+        "internalType": "uint8",
+        "name": "tokenType_",
+        "type": "uint8"
+      },
+      {
         "internalType": "uint256",
         "name": "dropAmount_",
         "type": "uint256"
       },
       {
-        "internalType": "uint256",
-        "name": "totalRecipients_",
-        "type": "uint256"
+        "internalType": "uint256[]",
+        "name": "tokenIds_",
+        "type": "uint256[]"
       },
       {
         "internalType": "uint256",
-        "name": "startTime_",
+        "name": "tokenId_",
         "type": "uint256"
+      },
+      {
+        "internalType": "uint32",
+        "name": "totalRecipients_",
+        "type": "uint32"
+      },
+      {
+        "internalType": "uint32",
+        "name": "startTime_",
+        "type": "uint32"
       }
     ],
     "stateMutability": "nonpayable",
@@ -42,23 +57,12 @@
   },
   {
     "inputs": [],
-    "name": "InsufficientTokens",
-    "type": "error"
-  },
-  {
-    "inputs": [],
     "name": "InvalidProof",
     "type": "error"
   },
   {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "token",
-        "type": "address"
-      }
-    ],
-    "name": "SafeERC20FailedOperation",
+    "inputs": [],
+    "name": "TransferFailed",
     "type": "error"
   },
   {
@@ -67,13 +71,19 @@
       {
         "indexed": true,
         "internalType": "address",
-        "name": "from",
+        "name": "recipient",
         "type": "address"
       },
       {
         "indexed": false,
         "internalType": "uint256",
-        "name": "dropAmount",
+        "name": "amount",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "tokenId",
         "type": "uint256"
       }
     ],
@@ -84,7 +94,7 @@
     "inputs": [
       {
         "internalType": "bytes32[]",
-        "name": "merkleProof",
+        "name": "proof",
         "type": "bytes32[]"
       }
     ],
@@ -98,9 +108,9 @@
     "name": "claimedCount",
     "outputs": [
       {
-        "internalType": "uint256",
+        "internalType": "uint32",
         "name": "",
-        "type": "uint256"
+        "type": "uint32"
       }
     ],
     "stateMutability": "view",
@@ -114,6 +124,32 @@
         "internalType": "uint256",
         "name": "",
         "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getRemainingTokens",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getTokenIds",
+    "outputs": [
+      {
+        "internalType": "uint256[]",
+        "name": "",
+        "type": "uint256[]"
       }
     ],
     "stateMutability": "view",
@@ -152,16 +188,113 @@
     "type": "function"
   },
   {
-    "inputs": [],
-    "name": "startTime",
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256[]",
+        "name": "",
+        "type": "uint256[]"
+      },
+      {
+        "internalType": "uint256[]",
+        "name": "",
+        "type": "uint256[]"
+      },
+      {
+        "internalType": "bytes",
+        "name": "",
+        "type": "bytes"
+      }
+    ],
+    "name": "onERC1155BatchReceived",
     "outputs": [
+      {
+        "internalType": "bytes4",
+        "name": "",
+        "type": "bytes4"
+      }
+    ],
+    "stateMutability": "pure",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      },
       {
         "internalType": "uint256",
         "name": "",
         "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bytes",
+        "name": "",
+        "type": "bytes"
+      }
+    ],
+    "name": "onERC1155Received",
+    "outputs": [
+      {
+        "internalType": "bytes4",
+        "name": "",
+        "type": "bytes4"
+      }
+    ],
+    "stateMutability": "pure",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "startTime",
+    "outputs": [
+      {
+        "internalType": "uint32",
+        "name": "",
+        "type": "uint32"
       }
     ],
     "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes4",
+        "name": "interfaceId",
+        "type": "bytes4"
+      }
+    ],
+    "name": "supportsInterface",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "pure",
     "type": "function"
   },
   {
@@ -179,12 +312,38 @@
   },
   {
     "inputs": [],
-    "name": "totalDropAmount",
+    "name": "tokenId",
     "outputs": [
       {
         "internalType": "uint256",
         "name": "",
         "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "tokenType",
+    "outputs": [
+      {
+        "internalType": "uint8",
+        "name": "",
+        "type": "uint8"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "totalRecipients",
+    "outputs": [
+      {
+        "internalType": "uint32",
+        "name": "",
+        "type": "uint32"
       }
     ],
     "stateMutability": "view",

@@ -14,15 +14,15 @@ import StrataForgeAirdropFactoryABI from "../../../../app/components/ABIs/Strata
 import AdminDashboardLayout from "../AdminDashboardLayout";
 
 const ADMIN_CONTRACT_ADDRESS =
-  "0xBD8e7980DCFA4E41873D90046f77Faa90A068cAd" as const;
+  "0xFEc4e9718B1dfef72Db183f3e30b418762B674C4" as const;
 const FACTORY_CONTRACT_ADDRESS =
-  "0xEaAf43B8C19B1E0CdEc61C8170A446BAc5F79954" as const;
+  "0x676EA6F52b4f27a164DaC428247e3458b74754b9" as const;
 const AIRDROP_CONTRACT_ADDRESS =
-  "0x195dcF2E5340b5Fd3EC4BDBB94ADFeF09919CC8d" as const;
+  "0x5463D07280b6b6B503C69Af31956265a0Ef4AA13" as const;
 const adminABI = StrataForgeAdminABI as Abi;
 const factoryABI = StrataForgeFactoryABI as Abi;
 const airdropFactoryABI = StrataForgeAirdropFactoryABI as Abi;
-const EXPLORER_URL = "https://sepolia.basescan.org/address";
+const EXPLORER_URL = "https://sepolia-blockscout.lisk.com/address";
 
 // Define proper types for token data
 interface TokenInfo {
@@ -55,7 +55,7 @@ const ContractControls = () => {
   const [newFactoryAddress, setNewFactoryAddress] = useState("");
   const [newAdminAddress, setNewAdminAddress] = useState("");
   const [newAirdropFactoryAddress, setNewAirdropFactoryAddress] = useState("");
-  const [newPriceFeedAddress, setNewPriceFeedAddress] = useState("");
+  // REMOVED: newPriceFeedAddress state
   const [creatorAddress, setCreatorAddress] = useState("");
   const [tokenId, setTokenId] = useState("");
   const [tokenDetails, setTokenDetails] = useState<TokenInfo | null>(null);
@@ -108,11 +108,7 @@ const ContractControls = () => {
         abi: adminABI,
         functionName: "airdropContract",
       },
-      {
-        address: ADMIN_CONTRACT_ADDRESS,
-        abi: adminABI,
-        functionName: "priceFeed",
-      },
+      // REMOVED: priceFeed contract read
     ],
     query: { enabled: isConnected, retry: 3, retryDelay: 1000 },
   });
@@ -367,7 +363,7 @@ const ContractControls = () => {
       setNewFactoryAddress("");
       setNewAdminAddress("");
       setNewAirdropFactoryAddress("");
-      setNewPriceFeedAddress("");
+      // REMOVED: newPriceFeedAddress state reset
       setTxHash(undefined);
       setIsTxPending(false);
     }
@@ -453,25 +449,7 @@ const ContractControls = () => {
     );
   };
 
-  const handleSetPriceFeed = () => {
-    if (!isAddress(newPriceFeedAddress)) {
-      setError("Please enter a valid Ethereum address for price feed");
-      return;
-    }
-    setIsTxPending(true);
-    writeContract(
-      {
-        address: ADMIN_CONTRACT_ADDRESS,
-        abi: adminABI,
-        functionName: "setPriceFeed",
-        args: [newPriceFeedAddress],
-      },
-      {
-        onSuccess: (hash) => setTxHash(hash),
-        onError: () => setIsTxPending(false),
-      }
-    );
-  };
+  // REMOVED: handleSetPriceFeed function
 
   const handleAdminPause = () => {
     setIsTxPending(true);
@@ -621,7 +599,7 @@ const ContractControls = () => {
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-gray-400">Network:</span>
-              <span className="font-mono text-gray-300">Base Sepolia</span>
+              <span className="font-mono text-gray-300">Lisk Sepolia</span>
             </div>
             {error && (
               <>
@@ -656,7 +634,7 @@ const ContractControls = () => {
   const airdropFactoryAddress = contractState?.[2]?.result as
     | string
     | undefined;
-  const priceFeedAddress = contractState?.[3]?.result as string | undefined;
+  // REMOVED: priceFeedAddress variable
 
   return (
     <AdminDashboardLayout>
@@ -672,8 +650,8 @@ const ContractControls = () => {
             Contract Controls <span className="text-purple-400">🛠️</span>
           </h1>
           <p className="font-vietnam font-normal text-base leading-[170%] tracking-[1%] text-[hsl(var(--foreground)/0.7)]">
-            Manage admin, factory, airdrop factory, and price feed settings,
-            pause states, and token tracking.
+            Manage admin, factory, and airdrop factory settings, pause states,
+            and token tracking.
           </p>
         </div>
 
@@ -736,21 +714,7 @@ const ContractControls = () => {
                   : "Not set"}
               </a>
             </div>
-            <div className="p-4 bg-[#16091D]/60 rounded-xl">
-              <h3 className="text-lg font-semibold text-white">Price Feed</h3>
-              <a
-                href={`${EXPLORER_URL}/${priceFeedAddress}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-400 font-mono text-sm hover:underline break-all"
-              >
-                {priceFeedAddress
-                  ? `${priceFeedAddress.slice(0, 6)}...${priceFeedAddress.slice(
-                      -4
-                    )}`
-                  : "Not set"}
-              </a>
-            </div>
+            {/* REMOVED: Price Feed status card */}
             <div className="p-4 bg-[#16091D]/60 rounded-xl">
               <h3 className="text-lg font-semibold text-white">
                 Total Token Count
@@ -946,45 +910,7 @@ const ContractControls = () => {
           </div>
         </div>
 
-        <div className="mb-10 relative z-10">
-          <h2 className="font-poppins font-semibold text-xl md:text-2xl mb-6">
-            Set Price Feed (Admin)
-          </h2>
-          <div className="bg-[#1E1425]/80 backdrop-blur-sm rounded-2xl shadow-lg p-6 border border-purple-500/10">
-            <div className="flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-4">
-              <input
-                type="text"
-                placeholder="Enter price feed address (0x...)"
-                value={newPriceFeedAddress}
-                onChange={(e) => setNewPriceFeedAddress(e.target.value)}
-                className="w-full md:flex-1 bg-[#16091D]/60 border border-gray-700/30 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500/50"
-              />
-              <button
-                onClick={handleSetPriceFeed}
-                disabled={isWritePending || isTxPending || isTxConfirming}
-                className={`w-full md:w-auto px-6 py-3 bg-gradient-to-r from-purple-500 to-indigo-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 ${
-                  isWritePending || isTxPending || isTxConfirming
-                    ? "opacity-50 cursor-not-allowed"
-                    : ""
-                }`}
-              >
-                {isWritePending || isTxPending || isTxConfirming
-                  ? "Processing..."
-                  : "Set Price Feed"}
-              </button>
-            </div>
-            {isTxPending && (
-              <p className="text-yellow-400 text-sm mt-2">
-                Transaction pending: {txHash}
-              </p>
-            )}
-            {isTxSuccess && (
-              <p className="text-green-400 text-sm mt-2">
-                Price feed updated successfully!
-              </p>
-            )}
-          </div>
-        </div>
+        {/* REMOVED: Set Price Feed section */}
 
         <div className="mb-10 relative z-10">
           <h2 className="font-poppins font-semibold text-xl md:text-2xl mb-6">

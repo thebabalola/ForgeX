@@ -1,5 +1,14 @@
 [
   { "inputs": [], "stateMutability": "nonpayable", "type": "constructor" },
+  { "inputs": [], "name": "AccessControlBadConfirmation", "type": "error" },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "account", "type": "address" },
+      { "internalType": "bytes32", "name": "neededRole", "type": "bytes32" }
+    ],
+    "name": "AccessControlUnauthorizedAccount",
+    "type": "error"
+  },
   { "inputs": [], "name": "AlreadyInitialized", "type": "error" },
   {
     "inputs": [
@@ -48,12 +57,15 @@
     "type": "error"
   },
   { "inputs": [], "name": "EnforcedPause", "type": "error" },
-  { "inputs": [], "name": "ExceedsMaxTransaction", "type": "error" },
-  { "inputs": [], "name": "ExceedsMaxWalletSize", "type": "error" },
   { "inputs": [], "name": "ExpectedPause", "type": "error" },
   { "inputs": [], "name": "FeatureNotEnabled", "type": "error" },
+  { "inputs": [], "name": "InsufficientBalance", "type": "error" },
+  { "inputs": [], "name": "InsufficientCollateral", "type": "error" },
   { "inputs": [], "name": "InvalidAmount", "type": "error" },
-  { "inputs": [], "name": "InvalidDecimals", "type": "error" },
+  { "inputs": [], "name": "InvalidCollateralAmount", "type": "error" },
+  { "inputs": [], "name": "InvalidFees", "type": "error" },
+  { "inputs": [], "name": "InvalidRatio", "type": "error" },
+  { "inputs": [], "name": "InvalidTreasury", "type": "error" },
   {
     "inputs": [
       { "internalType": "address", "name": "owner", "type": "address" }
@@ -68,6 +80,7 @@
     "name": "OwnableUnauthorizedAccount",
     "type": "error"
   },
+  { "inputs": [], "name": "TransferFailed", "type": "error" },
   {
     "anonymous": false,
     "inputs": [
@@ -130,6 +143,81 @@
     "inputs": [
       {
         "indexed": true,
+        "internalType": "bytes32",
+        "name": "role",
+        "type": "bytes32"
+      },
+      {
+        "indexed": true,
+        "internalType": "bytes32",
+        "name": "previousAdminRole",
+        "type": "bytes32"
+      },
+      {
+        "indexed": true,
+        "internalType": "bytes32",
+        "name": "newAdminRole",
+        "type": "bytes32"
+      }
+    ],
+    "name": "RoleAdminChanged",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "bytes32",
+        "name": "role",
+        "type": "bytes32"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "sender",
+        "type": "address"
+      }
+    ],
+    "name": "RoleGranted",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "bytes32",
+        "name": "role",
+        "type": "bytes32"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "sender",
+        "type": "address"
+      }
+    ],
+    "name": "RoleRevoked",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
         "internalType": "address",
         "name": "from",
         "type": "address"
@@ -162,6 +250,27 @@
     ],
     "name": "Unpaused",
     "type": "event"
+  },
+  {
+    "inputs": [],
+    "name": "DEFAULT_ADMIN_ROLE",
+    "outputs": [{ "internalType": "bytes32", "name": "", "type": "bytes32" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "MINTER_ROLE",
+    "outputs": [{ "internalType": "bytes32", "name": "", "type": "bytes32" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "PAUSER_ROLE",
+    "outputs": [{ "internalType": "bytes32", "name": "", "type": "bytes32" }],
+    "stateMutability": "view",
+    "type": "function"
   },
   {
     "inputs": [
@@ -204,11 +313,32 @@
   {
     "inputs": [
       { "internalType": "address", "name": "account", "type": "address" },
-      { "internalType": "uint256", "name": "value", "type": "uint256" }
+      { "internalType": "uint256", "name": "amount", "type": "uint256" }
     ],
     "name": "burnFrom",
     "outputs": [],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [{ "internalType": "address", "name": "", "type": "address" }],
+    "name": "collateralDeposited",
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "collateralRatio",
+    "outputs": [{ "internalType": "uint96", "name": "", "type": "uint96" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "collateralToken",
+    "outputs": [{ "internalType": "address", "name": "", "type": "address" }],
+    "stateMutability": "view",
     "type": "function"
   },
   {
@@ -219,6 +349,20 @@
     "type": "function"
   },
   {
+    "inputs": [
+      { "internalType": "address", "name": "spender", "type": "address" },
+      {
+        "internalType": "uint256",
+        "name": "subtractedValue",
+        "type": "uint256"
+      }
+    ],
+    "name": "decreaseAllowance",
+    "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
     "inputs": [{ "internalType": "bytes4", "name": "", "type": "bytes4" }],
     "name": "enabledFeatures",
     "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
@@ -226,12 +370,48 @@
     "type": "function"
   },
   {
+    "inputs": [],
+    "name": "getEnabledFeatures",
+    "outputs": [{ "internalType": "bool[]", "name": "", "type": "bool[]" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [
-      { "internalType": "address", "name": "account", "type": "address" },
-      { "internalType": "bool", "name": "excluded", "type": "bool" }
+      { "internalType": "bytes32", "name": "role", "type": "bytes32" }
     ],
-    "name": "excludeFromLimits",
+    "name": "getRoleAdmin",
+    "outputs": [{ "internalType": "bytes32", "name": "", "type": "bytes32" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "bytes32", "name": "role", "type": "bytes32" },
+      { "internalType": "address", "name": "account", "type": "address" }
+    ],
+    "name": "grantRole",
     "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "bytes32", "name": "role", "type": "bytes32" },
+      { "internalType": "address", "name": "account", "type": "address" }
+    ],
+    "name": "hasRole",
+    "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "spender", "type": "address" },
+      { "internalType": "uint256", "name": "addedValue", "type": "uint256" }
+    ],
+    "name": "increaseAllowance",
+    "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
     "stateMutability": "nonpayable",
     "type": "function"
   },
@@ -239,15 +419,18 @@
     "inputs": [
       { "internalType": "string", "name": "name_", "type": "string" },
       { "internalType": "string", "name": "symbol_", "type": "string" },
-      { "internalType": "uint96", "name": "initialSupply", "type": "uint96" },
-      { "internalType": "uint8", "name": "decimals_", "type": "uint8" },
-      { "internalType": "address", "name": "tokenOwner", "type": "address" },
-      { "internalType": "uint96", "name": "_maxWalletSize", "type": "uint96" },
+      {
+        "internalType": "address",
+        "name": "_collateralToken",
+        "type": "address"
+      },
       {
         "internalType": "uint96",
-        "name": "_maxTransactionAmount",
+        "name": "_collateralRatio",
         "type": "uint96"
       },
+      { "internalType": "address", "name": "_treasury", "type": "address" },
+      { "internalType": "address", "name": "tokenOwner", "type": "address" },
       { "internalType": "bool[]", "name": "features", "type": "bool[]" }
     ],
     "name": "initialize",
@@ -256,34 +439,23 @@
     "type": "function"
   },
   {
-    "inputs": [{ "internalType": "address", "name": "", "type": "address" }],
-    "name": "isExcludedFromLimits",
-    "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "maxTransactionAmount",
-    "outputs": [{ "internalType": "uint96", "name": "", "type": "uint96" }],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "maxWalletSize",
-    "outputs": [{ "internalType": "uint96", "name": "", "type": "uint96" }],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
     "inputs": [
-      { "internalType": "address", "name": "to", "type": "address" },
-      { "internalType": "uint256", "name": "amount", "type": "uint256" }
+      {
+        "internalType": "uint256",
+        "name": "collateralAmount",
+        "type": "uint256"
+      }
     ],
     "name": "mint",
     "outputs": [],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "mintFee",
+    "outputs": [{ "internalType": "uint32", "name": "", "type": "uint32" }],
+    "stateMutability": "view",
     "type": "function"
   },
   {
@@ -315,6 +487,22 @@
     "type": "function"
   },
   {
+    "inputs": [
+      { "internalType": "uint256", "name": "tokenAmount", "type": "uint256" }
+    ],
+    "name": "redeem",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "redeemFee",
+    "outputs": [{ "internalType": "uint32", "name": "", "type": "uint32" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [],
     "name": "renounceOwnership",
     "outputs": [],
@@ -323,20 +511,63 @@
   },
   {
     "inputs": [
-      { "internalType": "uint96", "name": "amount", "type": "uint96" }
+      { "internalType": "bytes32", "name": "role", "type": "bytes32" },
+      {
+        "internalType": "address",
+        "name": "callerConfirmation",
+        "type": "address"
+      }
     ],
-    "name": "setMaxTransactionAmount",
+    "name": "renounceRole",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
   },
   {
     "inputs": [
-      { "internalType": "uint96", "name": "amount", "type": "uint96" }
+      { "internalType": "bytes32", "name": "role", "type": "bytes32" },
+      { "internalType": "address", "name": "account", "type": "address" }
     ],
-    "name": "setMaxWalletSize",
+    "name": "revokeRole",
     "outputs": [],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "uint96", "name": "_collateralRatio", "type": "uint96" }
+    ],
+    "name": "setCollateralRatio",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "uint32", "name": "_mintFee", "type": "uint32" },
+      { "internalType": "uint32", "name": "_redeemFee", "type": "uint32" }
+    ],
+    "name": "setFees",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "_treasury", "type": "address" }
+    ],
+    "name": "setTreasury",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "bytes4", "name": "interfaceId", "type": "bytes4" }
+    ],
+    "name": "supportsInterface",
+    "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
+    "stateMutability": "view",
     "type": "function"
   },
   {
@@ -381,6 +612,13 @@
     "name": "transferOwnership",
     "outputs": [],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "treasury",
+    "outputs": [{ "internalType": "address", "name": "", "type": "address" }],
+    "stateMutability": "view",
     "type": "function"
   },
   {

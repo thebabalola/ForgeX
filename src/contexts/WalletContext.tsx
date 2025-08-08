@@ -1,8 +1,9 @@
-'use client';
+"use client";
 
-import React, { createContext, useContext, useState } from 'react';
-import { useAccount, useDisconnect, useSignMessage } from 'wagmi';
-import { baseSepolia } from '../lib/wagmi-config';
+import React, { createContext, useContext, useState } from "react";
+import { useAccount, useDisconnect, useSignMessage } from "wagmi";
+// import { baseSepolia } from '../lib/wagmi-config';
+import { liskSepolia } from "../lib/wagmi-config";
 
 interface WalletContextType {
   address: `0x${string}` | undefined;
@@ -11,7 +12,8 @@ interface WalletContextType {
   connect: () => void;
   disconnect: () => void;
   connectError: Error | null;
-  baseSepolia: typeof baseSepolia;
+  // baseSepolia: typeof baseSepolia;
+  liskSepolia: typeof liskSepolia;
   signMessage: (message: string) => Promise<`0x${string}` | undefined>;
 }
 
@@ -31,16 +33,18 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
 
     try {
       // This calls the appkit connect method via custom element
-      const appkitButton = document.querySelector('appkit-button');
+      const appkitButton = document.querySelector("appkit-button");
       if (appkitButton) {
         // Trigger click on the appkit-button element
         (appkitButton as HTMLElement).click();
       } else {
-        throw new Error('AppKit button not found in the DOM');
+        throw new Error("AppKit button not found in the DOM");
       }
     } catch (error) {
-      console.error('Wallet connection error:', error);
-      setConnectError(error instanceof Error ? error : new Error('Failed to connect wallet'));
+      console.error("Wallet connection error:", error);
+      setConnectError(
+        error instanceof Error ? error : new Error("Failed to connect wallet")
+      );
     } finally {
       setIsConnecting(false);
     }
@@ -52,11 +56,13 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
   };
 
   // Function to sign a message
-  const signMessage = async (message: string): Promise<`0x${string}` | undefined> => {
+  const signMessage = async (
+    message: string
+  ): Promise<`0x${string}` | undefined> => {
     try {
       return await signMessageAsync({ message });
     } catch (error) {
-      console.error('Error signing message:', error);
+      console.error("Error signing message:", error);
       return undefined;
     }
   };
@@ -70,7 +76,8 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
         connect,
         disconnect,
         connectError,
-        baseSepolia,
+        // baseSepolia,
+        liskSepolia,
         signMessage,
       }}
     >
@@ -82,7 +89,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
 export function useWallet() {
   const context = useContext(WalletContext);
   if (context === undefined) {
-    throw new Error('useWallet must be used within a WalletProvider');
+    throw new Error("useWallet must be used within a WalletProvider");
   }
   return context;
 }

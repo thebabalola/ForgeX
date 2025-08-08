@@ -219,7 +219,7 @@ export default function DashboardSidebar() {
               text="Dashboard"
               active={currentPath === "/dashboard/token-creator"}
             />
-            <SidebarLink
+            {/* <SidebarLink
               href="/dashboard/token-creator/manage-subscription"
               icon={
                 <svg
@@ -240,7 +240,7 @@ export default function DashboardSidebar() {
               active={
                 currentPath === "/dashboard/token-creator/manage-subscription"
               }
-            />
+            /> */}
             <SidebarLink
               href="/dashboard/token-creator/create-tokens"
               icon={

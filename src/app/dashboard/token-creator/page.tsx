@@ -8,6 +8,7 @@ import StrataForgeFactoryABI from "../../../app/components/ABIs/StrataForgeFacto
 import StrataForgeAirdropFactoryABI from "../../../app/components/ABIs/StrataForgeAirdropFactoryABI.json";
 import DashBoardLayout from "./DashboardLayout";
 import Link from "next/link";
+import { useUsdEthPrice } from "../../../hooks/useUsdEthPrice"; // Added Moralis hook
 
 const Erc20Icon = () => (
   <svg
@@ -98,29 +99,15 @@ const AirdropPlaceholderIcon = () => (
 );
 
 const ADMIN_CONTRACT_ADDRESS =
-  "0xBD8e7980DCFA4E41873D90046f77Faa90A068cAd" as const;
+  "0xFEc4e9718B1dfef72Db183f3e30b418762B674C4" as const;
 const FACTORY_CONTRACT_ADDRESS =
-  "0xEaAf43B8C19B1E0CdEc61C8170A446BAc5F79954" as const;
+  "0x676EA6F52b4f27a164DaC428247e3458b74754b9" as const;
 const AIRDROP_CONTRACT_ADDRESS =
-  "0x195dcF2E5340b5Fd3EC4BDBB94ADFeF09919CC8d" as const;
+  "0x5463D07280b6b6B503C69Af31956265a0Ef4AA13" as const;
+
 const factoryABI = StrataForgeFactoryABI as Abi;
 const adminABI = StrataForgeAdminABI as Abi;
 const airdropFactoryABI = StrataForgeAirdropFactoryABI as Abi;
-const CHAINLINK_ABI = [
-  {
-    inputs: [],
-    name: "latestRoundData",
-    outputs: [
-      { name: "roundId", type: "uint80" },
-      { name: "answer", type: "int256" },
-      { name: "startedAt", type: "uint256" },
-      { name: "updatedAt", type: "uint256" },
-      { name: "answeredInRound", type: "uint80" },
-    ],
-    stateMutability: "view",
-    type: "function",
-  },
-] as const;
 
 const Dashboard = () => {
   const { address, isConnected, isConnecting, connect, connectError } =
@@ -141,35 +128,18 @@ const Dashboard = () => {
   const [error, setError] = useState<string[]>([]);
   const [userName, setUserName] = useState("Token Creator");
 
-  // Fetch priceFeed address
-  const { data: contractState, error: contractStateError } = useReadContracts({
-    contracts: [
-      {
-        address: ADMIN_CONTRACT_ADDRESS,
-        abi: adminABI,
-        functionName: "priceFeed",
-      },
-    ],
-    query: { enabled: isConnected, retry: 3, retryDelay: 1000 },
-  });
-
-  // Fetch ETH/USD price from Chainlink
-  const { data: priceData, error: priceError } = useReadContract({
-    address: contractState?.[0]?.result as `0x${string}` | undefined,
-    abi: CHAINLINK_ABI,
-    functionName: "latestRoundData",
-    query: {
-      enabled: isConnected && !!contractState?.[0]?.result,
-      retry: 3,
-      retryDelay: 1000,
-    },
-  });
+  // Fetch ETH/USD price from Moralis
+  const {
+    usdPrice: ethPrice,
+    loading: ethPriceLoading,
+    error: ethPriceError,
+  } = useUsdEthPrice();
 
   // Fetch feature fee
   const { data: featureFee, error: featureFeeError } = useReadContract({
     address: ADMIN_CONTRACT_ADDRESS,
     abi: adminABI,
-    functionName: "featureFee",
+    functionName: "featureFeeUSD",
     query: { enabled: isConnected, retry: 3, retryDelay: 1000 },
   });
 
@@ -200,7 +170,7 @@ const Dashboard = () => {
   const { data: totalAirdrops, error: totalAirdropsError } = useReadContract({
     address: AIRDROP_CONTRACT_ADDRESS,
     abi: airdropFactoryABI,
-    functionName: "getTotalAirdropCount",
+    functionName: "getAirdropCount",
     query: { enabled: isConnected, retry: 3, retryDelay: 1000 },
   });
 
@@ -357,8 +327,7 @@ const Dashboard = () => {
   // Handle errors
   useEffect(() => {
     const errors: string[] = [];
-    if (contractStateError) errors.push("Failed to load contract state");
-    if (priceError) errors.push("Failed to load ETH/USD price");
+    if (ethPriceError) errors.push("Failed to load ETH/USD price"); // Updated for Moralis
     if (featureFeeError) errors.push("Failed to load feature fee");
     if (airdropFeesError) errors.push("Failed to load airdrop fees");
     if (totalTokensError) errors.push("Failed to load token count");
@@ -368,10 +337,14 @@ const Dashboard = () => {
     if (connectError)
       errors.push(`Wallet connection failed: ${connectError.message}`);
     setError(errors);
-    setLoading(false);
+    if (
+      !ethPriceLoading && // Added Moralis loading
+      !loading // Keep existing logic
+    ) {
+      setLoading(false);
+    }
   }, [
-    contractStateError,
-    priceError,
+    ethPriceError,
     featureFeeError,
     airdropFeesError,
     totalTokensError,
@@ -379,6 +352,8 @@ const Dashboard = () => {
     totalAirdropsError,
     airdropDataError,
     connectError,
+    ethPriceLoading,
+    loading,
   ]);
 
   // Handler for airdrop button clicks
@@ -394,8 +369,6 @@ const Dashboard = () => {
     if (!feeUSD) return { usd: "0", eth: "0" };
     try {
       const usd = (Number(feeUSD) / 1e8).toFixed(2);
-      const ethPrice =
-        priceData && priceData[1] ? Number(priceData[1]) / 1e8 : 0;
       const eth = ethPrice
         ? (Number(feeUSD) / 1e8 / ethPrice).toFixed(6)
         : "N/A";
@@ -411,8 +384,6 @@ const Dashboard = () => {
     if (!feeUSD) return { usd: "0", eth: "0" };
     try {
       const usd = (Number(feeUSD) / 1e8).toFixed(2);
-      const ethPrice =
-        priceData && priceData[1] ? Number(priceData[1]) / 1e8 : 0;
       const eth = ethPrice
         ? (Number(feeUSD) / 1e8 / ethPrice).toFixed(6)
         : "N/A";
@@ -815,7 +786,7 @@ const Dashboard = () => {
     return <WalletConnection />;
   }
 
-  if (loading) {
+  if (loading || ethPriceLoading) {
     return <LoadingSpinner />;
   }
 

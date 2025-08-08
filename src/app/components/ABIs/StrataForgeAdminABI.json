@@ -17,7 +17,6 @@
   { "inputs": [], "name": "InvalidAmount", "type": "error" },
   { "inputs": [], "name": "InvalidFeatureCount", "type": "error" },
   { "inputs": [], "name": "InvalidFeeTier", "type": "error" },
-  { "inputs": [], "name": "InvalidPriceFeed", "type": "error" },
   { "inputs": [], "name": "InvalidProposal", "type": "error" },
   { "inputs": [], "name": "InvalidRecipientCount", "type": "error" },
   { "inputs": [], "name": "NotAdmin", "type": "error" },
@@ -37,10 +36,8 @@
     "name": "OwnableUnauthorizedAccount",
     "type": "error"
   },
-  { "inputs": [], "name": "PriceFeedNotSet", "type": "error" },
   { "inputs": [], "name": "ProposalExecuted", "type": "error" },
   { "inputs": [], "name": "ReentrancyGuardReentrantCall", "type": "error" },
-  { "inputs": [], "name": "StalePriceFeed", "type": "error" },
   { "inputs": [], "name": "TransferFailed", "type": "error" },
   {
     "anonymous": false,
@@ -99,7 +96,7 @@
       {
         "indexed": false,
         "internalType": "uint256",
-        "name": "fee",
+        "name": "feeETH",
         "type": "uint256"
       }
     ],
@@ -131,7 +128,7 @@
       {
         "indexed": false,
         "internalType": "uint256",
-        "name": "newFeatureFee",
+        "name": "newFeatureFeeUSD",
         "type": "uint256"
       }
     ],
@@ -156,7 +153,7 @@
       {
         "indexed": false,
         "internalType": "uint256",
-        "name": "totalFee",
+        "name": "ethPaid",
         "type": "uint256"
       }
     ],
@@ -193,19 +190,6 @@
       }
     ],
     "name": "Paused",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "newPriceFeed",
-        "type": "address"
-      }
-    ],
-    "name": "PriceFeedUpdated",
     "type": "event"
   },
   {
@@ -349,16 +333,7 @@
   },
   {
     "inputs": [],
-    "name": "featureFee",
-    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      { "internalType": "uint256", "name": "numRecipients", "type": "uint256" }
-    ],
-    "name": "getAirdropFeeETH",
+    "name": "featureFeeUSD",
     "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
     "stateMutability": "view",
     "type": "function"
@@ -422,19 +397,6 @@
   },
   {
     "inputs": [],
-    "name": "priceFeed",
-    "outputs": [
-      {
-        "internalType": "contract AggregatorV3Interface",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
     "name": "proposalCounter",
     "outputs": [{ "internalType": "uint32", "name": "", "type": "uint32" }],
     "stateMutability": "view",
@@ -445,7 +407,9 @@
       { "internalType": "uint96", "name": "amount", "type": "uint96" }
     ],
     "name": "proposeWithdrawal",
-    "outputs": [{ "internalType": "uint32", "name": "", "type": "uint32" }],
+    "outputs": [
+      { "internalType": "uint32", "name": "proposalId", "type": "uint32" }
+    ],
     "stateMutability": "nonpayable",
     "type": "function"
   },
@@ -519,18 +483,9 @@
   },
   {
     "inputs": [
-      { "internalType": "uint256", "name": "_featureFee", "type": "uint256" }
+      { "internalType": "uint256", "name": "_feeUSD", "type": "uint256" }
     ],
     "name": "setFeatureFee",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      { "internalType": "address", "name": "_priceFeed", "type": "address" }
-    ],
-    "name": "setPriceFeed",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

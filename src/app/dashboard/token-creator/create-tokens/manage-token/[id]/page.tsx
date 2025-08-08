@@ -3,11 +3,13 @@ import React, { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import {
   useReadContract,
+  // --- UPDATE: useReadContracts is no longer needed for fetching features
   useWriteContract,
   useAccount,
   useChainId,
 } from "wagmi";
-import { Abi, isAddress } from "viem";
+// --- UPDATE: keccak256 and toBytes are no longer needed on the frontend
+import { Abi, isAddress, keccak256, toBytes } from "viem";
 import DashboardLayout from "../../../DashboardLayout";
 import StrataForgeERC20ImplementationABI from "../../../../../components/ABIs/StrataForgeERC20ImplementationABI.json";
 import StrataForgeERC721ImplementationABI from "../../../../../components/ABIs/StrataForgeERC721ImplementationABI.json";
@@ -15,6 +17,20 @@ import StrataForgeERC1155ImplementationABI from "../../../../../components/ABIs/
 import StrataForgeMemecoinImplementationABI from "../../../../../components/ABIs/StrataForgeMemecoinImplementationABI.json";
 import StrataForgeStablecoinImplementationABI from "../../../../../components/ABIs/StrataForgeStablecoinImplementationABI.json";
 import StrataForgeFactoryABI from "../../../../../components/ABIs/StrataForgeFactoryABI.json";
+
+// Standard ERC-20 ABI for collateral approval
+const ERC20_ABI = [
+  {
+    inputs: [
+      { name: "spender", type: "address" },
+      { name: "amount", type: "uint256" },
+    ],
+    name: "approve",
+    outputs: [{ name: "", type: "bool" }],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+];
 
 // Background Shapes Component
 const BackgroundShapes = () => (
@@ -38,12 +54,18 @@ interface TokenDetails {
 
 interface TokenInfo {
   tokenAddress: string;
+  name: string;
+  symbol: string;
   tokenType: bigint;
 }
 
+// const FACTORY_CONTRACT_ADDRESS =
+//   "0xCa8Ba517fb2517575B853647EB304F59a935725f" as const;
+// const BASE_SEPOLIA_CHAIN_ID = 84532;
+
 const FACTORY_CONTRACT_ADDRESS =
-  "0xEaAf43B8C19B1E0CdEc61C8170A446BAc5F79954" as const;
-const BASE_SEPOLIA_CHAIN_ID = 84532; // Chain ID for Base Sepolia
+  "0x676EA6F52b4f27a164DaC428247e3458b74754b9" as const;
+const LISK_SEPOLIA_CHAIN_ID = 84532;
 
 const ManageToken = () => {
   const { id: tokenId } = useParams<{ id: string }>();
@@ -65,13 +87,18 @@ const ManageToken = () => {
   // Validate numeric input
   const validateNumber = (
     value: string,
-    allowZero: boolean = true
+    allowZero: boolean = true,
+    field: string = ""
   ): string | null => {
     if (value === "") return allowZero ? null : "Value cannot be empty";
     const num = Number(value);
     if (isNaN(num)) return "Must be a valid number";
     if (num < 0) return "Number cannot be negative";
     if (!allowZero && num === 0) return "Number cannot be zero";
+    if (field === "collateralRatio" && num < 10000)
+      return "Collateral ratio must be at least 10000";
+    if ((field === "mintFee" || field === "redeemFee") && num > 500)
+      return "Fee cannot exceed 500";
     return null;
   };
 
@@ -79,7 +106,8 @@ const ManageToken = () => {
   const handleInputChange = (
     key: string,
     value: string,
-    isNumber: boolean = false
+    isNumber: boolean = false,
+    field: string = ""
   ) => {
     setFormInputs((prev) => ({
       ...prev,
@@ -87,7 +115,7 @@ const ManageToken = () => {
     }));
 
     if (isNumber) {
-      const error = validateNumber(value, true);
+      const error = validateNumber(value, true, field);
       setInputErrors((prev) => ({
         ...prev,
         [key]: error || "",
@@ -95,7 +123,15 @@ const ManageToken = () => {
     } else {
       setInputErrors((prev) => ({
         ...prev,
-        [key]: "",
+        [key]:
+          (key.includes("address") ||
+            key.includes("Address") ||
+            key.includes("treasury") ||
+            key.includes("newOwner")) &&
+          (!isAddress(value) ||
+            value === "0x0000000000000000000000000000000000000000")
+            ? "Invalid address"
+            : "",
       }));
     }
   };
@@ -108,7 +144,7 @@ const ManageToken = () => {
     try {
       await writeContract({
         address: collateralToken as `0x${string}`,
-        abi: StrataForgeERC20ImplementationABI as Abi, // Assuming collateral is ERC20
+        abi: ERC20_ABI,
         functionName: "approve",
         args: [tokenAddress, amount],
         account: account as `0x${string}`,
@@ -135,13 +171,13 @@ const ManageToken = () => {
     query: { enabled: !!tokenId && !isNaN(Number(tokenId)) },
   });
 
-  // Extract tokenAddress and type from TokenInfo
+  // Extract tokenAddress and type
   const tokenAddress = tokenInfo ? (tokenInfo as TokenInfo).tokenAddress : null;
   const factoryTokenType = tokenInfo
     ? Number((tokenInfo as TokenInfo).tokenType)
     : null;
 
-  // Map factory token type to local token type
+  // Map factory token type
   useEffect(() => {
     if (factoryTokenType !== null) {
       const typeMap: {
@@ -166,7 +202,24 @@ const ManageToken = () => {
     stable: StrataForgeStablecoinImplementationABI as Abi,
   };
 
-  // Fetch collateral token address for stablecoin
+  // --- REMOVED: Inefficient fetching of each feature one by one ---
+  // const featureChecks = ...
+  // const { data: enabledFeaturesFromMultipleCalls } = useReadContracts(...)
+
+  // +++ ADDED: Single, efficient call to get the bool[] of features +++
+  const { data: enabledFeatures, isLoading: featuresLoading } = useReadContract(
+    {
+      address: tokenAddress as `0x${string}`,
+      // Provide a fallback ABI to prevent wagmi error before tokenType is set
+      abi: tokenType
+        ? tokenABIs[tokenType]
+        : (StrataForgeERC20ImplementationABI as Abi),
+      functionName: "getEnabledFeatures",
+      query: { enabled: !!tokenAddress && !!tokenType },
+    }
+  );
+
+  // Fetch collateral token for stablecoin
   const { data: collateralToken } = useReadContract({
     address: tokenAddress as `0x${string}`,
     abi: tokenABIs.stable,
@@ -177,129 +230,212 @@ const ManageToken = () => {
     },
   });
 
-  // Hook calls for token type detection (fallback if factory type fails)
-  const erc721InterfaceCheck = useReadContract({
-    address: tokenAddress as `0x${string}`,
-    abi: tokenABIs.erc721,
-    functionName: "supportsInterface",
-    args: ["0x80ac58cd"],
-    query: { enabled: !!tokenAddress && isAddress(tokenAddress) && !tokenType },
-  });
+  const featureOptionsMap: Record<
+    number,
+    { functionName: string; signature: string }[]
+  > = {
+    0: [
+      { functionName: "mint", signature: "mint(address,uint256)" },
+      { functionName: "burn", signature: "burn(uint256)" },
+      { functionName: "pause", signature: "pause()" },
+      { functionName: "transfer", signature: "transfer(address,uint256)" },
+      { functionName: "approve", signature: "approve(address,uint256)" },
+      {
+        functionName: "transferFrom",
+        signature: "transferFrom(address,address,uint256)",
+      },
+      {
+        functionName: "increaseAllowance",
+        signature: "increaseAllowance(address,uint256)",
+      },
+      {
+        functionName: "decreaseAllowance",
+        signature: "decreaseAllowance(address,uint256)",
+      },
+      { functionName: "burnFrom", signature: "burnFrom(address,uint256)" },
+      {
+        functionName: "permit",
+        signature:
+          "permit(address,address,uint256,uint256,uint8,bytes32,bytes32)",
+      },
+      { functionName: "grantRole", signature: "grantRole(bytes32,address)" },
+      { functionName: "revokeRole", signature: "revokeRole(bytes32,address)" },
+      {
+        functionName: "renounceRole",
+        signature: "renounceRole(bytes32,address)",
+      },
+      {
+        functionName: "transferOwnership",
+        signature: "transferOwnership(address)",
+      },
+      { functionName: "renounceOwnership", signature: "renounceOwnership()" },
+    ],
+    1: [
+      { functionName: "mint", signature: "mint(address)" },
+      { functionName: "mintWithURI", signature: "mintWithURI(address,string)" },
+      { functionName: "burn", signature: "burn(uint256)" },
+      { functionName: "pause", signature: "pause()" },
+      { functionName: "setBaseURI", signature: "setBaseURI(string)" },
+      { functionName: "approve", signature: "approve(address,uint256)" },
+      { functionName: "safeMint", signature: "safeMint(address)" },
+      {
+        functionName: "safeMintWithURI",
+        signature: "safeMintWithURI(address,string)",
+      },
+      {
+        functionName: "setApprovalForAll",
+        signature: "setApprovalForAll(address,bool)",
+      },
+      {
+        functionName: "transferFrom",
+        signature: "transferFrom(address,address,uint256)",
+      },
+      {
+        functionName: "safeTransferFrom",
+        signature: "safeTransferFrom(address,address,uint256)",
+      },
+      {
+        functionName: "safeTransfersFrom",
+        signature: "safeTransfersFrom(address,address,uint256,bytes)",
+      },
+      { functionName: "setTokenURI", signature: "setTokenURI(uint256,string)" },
+      { functionName: "grantRole", signature: "grantRole(bytes32,address)" },
+      { functionName: "revokeRole", signature: "revokeRole(bytes32,address)" },
+      {
+        functionName: "renounceRole",
+        signature: "renounceRole(bytes32,address)",
+      },
+      {
+        functionName: "transferOwnership",
+        signature: "transferOwnership(address)",
+      },
+      { functionName: "renounceOwnership", signature: "renounceOwnership()" },
+    ],
+    2: [
+      {
+        functionName: "mint",
+        signature: "mint(address,uint256,uint256,bytes)",
+      },
+      { functionName: "burn", signature: "burn(address,uint256,uint256)" },
+      { functionName: "pause", signature: "pause()" },
+      { functionName: "setURI", signature: "setURI(string)" },
+      { functionName: "setTokenURI", signature: "setTokenURI(uint256,string)" },
+      {
+        functionName: "setApprovalForAll",
+        signature: "setApprovalForAll(address,bool)",
+      },
+      {
+        functionName: "safeTransferFrom",
+        signature: "safeTransferFrom(address,address,uint256,uint256,bytes)",
+      },
+      {
+        functionName: "mintBatch",
+        signature: "mintBatch(address,uint256[],uint256[],bytes)",
+      },
+      {
+        functionName: "burnBatch",
+        signature: "burnBatch(address,uint256[],uint256[])",
+      },
+      {
+        functionName: "safeBatchTransferFrom",
+        signature:
+          "safeBatchTransferFrom(address,address,uint256[],uint256[],bytes)",
+      },
+      { functionName: "grantRole", signature: "grantRole(bytes32,address)" },
+      { functionName: "revokeRole", signature: "revokeRole(bytes32,address)" },
+      {
+        functionName: "renounceRole",
+        signature: "renounceRole(bytes32,address)",
+      },
+      {
+        functionName: "transferOwnership",
+        signature: "transferOwnership(address)",
+      },
+      { functionName: "renounceOwnership", signature: "renounceOwnership()" },
+    ],
+    3: [
+      { functionName: "mint", signature: "mint(address,uint256)" },
+      { functionName: "burn", signature: "burn(uint256)" },
+      { functionName: "pause", signature: "pause()" },
+      {
+        functionName: "setMaxWalletSize",
+        signature: "setMaxWalletSize(uint96)",
+      },
+      {
+        functionName: "setMaxTransactionAmount",
+        signature: "setMaxTransactionAmount(uint96)",
+      },
+      {
+        functionName: "excludeFromLimits",
+        signature: "excludeFromLimits(address,bool)",
+      },
+      { functionName: "transfer", signature: "transfer(address,uint256)" },
+      { functionName: "approve", signature: "approve(address,uint256)" },
+      {
+        functionName: "transferFrom",
+        signature: "transferFrom(address,address,uint256)",
+      },
+      {
+        functionName: "increaseAllowance",
+        signature: "increaseAllowance(address,uint256)",
+      },
+      {
+        functionName: "decreaseAllowance",
+        signature: "decreaseAllowance(address,uint256)",
+      },
+      { functionName: "burnFrom", signature: "burnFrom(address,uint256)" },
+      { functionName: "grantRole", signature: "grantRole(bytes32,address)" },
+      { functionName: "revokeRole", signature: "revokeRole(bytes32,address)" },
+      {
+        functionName: "transferOwnership",
+        signature: "transferOwnership(address)",
+      },
+    ],
+    4: [
+      { functionName: "mint", signature: "mint(uint256)" },
+      { functionName: "redeem", signature: "redeem(uint256)" },
+      { functionName: "burn", signature: "burn(uint256)" },
+      { functionName: "pause", signature: "pause()" },
+      {
+        functionName: "setCollateralRatio",
+        signature: "setCollateralRatio(uint96)",
+      },
+      { functionName: "setFees", signature: "setFees(uint32,uint32)" },
+      { functionName: "setTreasury", signature: "setTreasury(address)" },
+      { functionName: "transfer", signature: "transfer(address,uint256)" },
+      { functionName: "approve", signature: "approve(address,uint256)" },
+      {
+        functionName: "transferFrom",
+        signature: "transferFrom(address,address,uint256)",
+      },
+      {
+        functionName: "increaseAllowance",
+        signature: "increaseAllowance(address,uint256)",
+      },
+      {
+        functionName: "decreaseAllowance",
+        signature: "decreaseAllowance(address,uint256)",
+      },
+      { functionName: "burnFrom", signature: "burnFrom(address,uint256)" },
+      { functionName: "grantRole", signature: "grantRole(bytes32,address)" },
+      {
+        functionName: "transferOwnership",
+        signature: "transferOwnership(address)",
+      },
+    ],
+  };
 
-  const erc1155InterfaceCheck = useReadContract({
-    address: tokenAddress as `0x${string}`,
-    abi: tokenABIs.erc1155,
-    functionName: "supportsInterface",
-    args: ["0xd9b67a26"],
-    query: { enabled: !!tokenAddress && isAddress(tokenAddress) && !tokenType },
-  });
-
-  const memeMaxWalletCheck = useReadContract({
-    address: tokenAddress as `0x${string}`,
-    abi: tokenABIs.meme,
-    functionName: "maxWalletSize",
-    query: { enabled: !!tokenAddress && isAddress(tokenAddress) && !tokenType },
-  });
-
-  const stableCollateralCheck = useReadContract({
-    address: tokenAddress as `0x${string}`,
-    abi: tokenABIs.stable,
-    functionName: "collateralToken",
-    query: { enabled: !!tokenAddress && isAddress(tokenAddress) && !tokenType },
-  });
-
-  const erc20DecimalsCheck = useReadContract({
-    address: tokenAddress as `0x${string}`,
-    abi: tokenABIs.erc20,
-    functionName: "decimals",
-    query: { enabled: !!tokenAddress && isAddress(tokenAddress) && !tokenType },
-  });
-
-  // Detect token type (fallback if not set by factory)
-  useEffect(() => {
-    if (tokenType || !tokenAddress || !isAddress(tokenAddress)) return;
-
-    const detectTokenType = () => {
-      try {
-        if (erc721InterfaceCheck.data) {
-          setTokenType("erc721");
-          return;
-        }
-
-        if (erc1155InterfaceCheck.data) {
-          setTokenType("erc1155");
-          return;
-        }
-
-        if (
-          memeMaxWalletCheck.data !== undefined &&
-          !memeMaxWalletCheck.error
-        ) {
-          setTokenType("meme");
-          return;
-        }
-
-        if (
-          stableCollateralCheck.data !== undefined &&
-          !stableCollateralCheck.error
-        ) {
-          setTokenType("stable");
-          return;
-        }
-
-        if (
-          erc20DecimalsCheck.data !== undefined &&
-          !erc20DecimalsCheck.error
-        ) {
-          setTokenType("erc20");
-          return;
-        }
-
-        if (
-          erc721InterfaceCheck.isLoading ||
-          erc1155InterfaceCheck.isLoading ||
-          memeMaxWalletCheck.isLoading ||
-          stableCollateralCheck.isLoading ||
-          erc20DecimalsCheck.isLoading
-        ) {
-          return;
-        }
-
-        setError("Unknown token type");
-      } catch (err) {
-        setError("Failed to detect token type");
-        console.error(err);
-      } finally {
-        if (!tokenType) setLoading(false);
-      }
-    };
-
-    detectTokenType();
-  }, [
-    tokenType,
-    tokenAddress,
-    erc721InterfaceCheck.data,
-    erc721InterfaceCheck.isLoading,
-    erc1155InterfaceCheck.data,
-    erc1155InterfaceCheck.isLoading,
-    memeMaxWalletCheck.data,
-    memeMaxWalletCheck.error,
-    memeMaxWalletCheck.isLoading,
-    stableCollateralCheck.data,
-    stableCollateralCheck.error,
-    stableCollateralCheck.isLoading,
-    erc20DecimalsCheck.data,
-    erc20DecimalsCheck.error,
-    erc20DecimalsCheck.isLoading,
-  ]);
-
-  // Hook calls for token details
+  // Fetch token details and owner
   const nameQuery = useReadContract({
     address: tokenAddress as `0x${string}`,
     abi: tokenType ? tokenABIs[tokenType] : tokenABIs.erc20,
     functionName: "name",
     query: {
-      enabled: !!tokenType && !!tokenAddress && isAddress(tokenAddress),
+      enabled:
+        !!tokenType &&
+        !!tokenAddress &&
+        isAddress(tokenAddress) &&
+        tokenType !== "erc1155",
     },
   });
 
@@ -308,7 +444,11 @@ const ManageToken = () => {
     abi: tokenType ? tokenABIs[tokenType] : tokenABIs.erc20,
     functionName: "symbol",
     query: {
-      enabled: !!tokenType && !!tokenAddress && isAddress(tokenAddress),
+      enabled:
+        !!tokenType &&
+        !!tokenAddress &&
+        isAddress(tokenAddress) &&
+        tokenType !== "erc1155",
     },
   });
 
@@ -336,17 +476,26 @@ const ManageToken = () => {
     },
   });
 
-  // Fetch token details and owner status
+  // Set token details and owner status
   useEffect(() => {
-    if (!tokenType || !tokenAddress || !isAddress(tokenAddress)) return;
+    if (!tokenType || !tokenAddress || !isAddress(tokenAddress) || !tokenInfo)
+      return;
 
-    const name = nameQuery.data as string;
-    const symbol = symbolQuery.data as string;
-    const decimals = decimalsQuery.data as number | undefined;
     const owner = ownerQuery.data as string;
 
-    if (name && symbol) {
-      setTokenDetails({ name, symbol, decimals });
+    if (tokenType === "erc1155") {
+      const factoryName = (tokenInfo as TokenInfo).name;
+      const factorySymbol = (tokenInfo as TokenInfo).symbol;
+      if (factoryName && factorySymbol) {
+        setTokenDetails({ name: factoryName, symbol: factorySymbol });
+      }
+    } else {
+      const name = nameQuery.data as string;
+      const symbol = symbolQuery.data as string;
+      const decimals = decimalsQuery.data as number | undefined;
+      if (name && symbol) {
+        setTokenDetails({ name, symbol, decimals });
+      }
     }
 
     setIsOwner(
@@ -357,13 +506,14 @@ const ManageToken = () => {
     tokenType,
     tokenAddress,
     account,
+    tokenInfo,
     nameQuery.data,
     symbolQuery.data,
     decimalsQuery.data,
     ownerQuery.data,
   ]);
 
-  // Handle errors from tokenInfo
+  // Handle errors
   useEffect(() => {
     if (tokenInfoError) {
       setError("Invalid token ID or token not found");
@@ -397,6 +547,7 @@ const ManageToken = () => {
       { name: "owner", label: "Owner" },
     ],
     erc1155: [
+      { name: "uri", label: "URI", args: [BigInt(0)] },
       { name: "paused", label: "Paused" },
       { name: "owner", label: "Owner" },
     ],
@@ -504,7 +655,7 @@ const ManageToken = () => {
     ],
   };
 
-  // Write functions
+  // Write functions (with signatures for feature filtering)
   const writeFunctions: Record<
     string,
     {
@@ -512,6 +663,7 @@ const ManageToken = () => {
       args: string[];
       inputs: { label: string; type: string; default?: string }[];
       ownerOnly?: boolean;
+      signature: string;
     }[]
   > = {
     erc20: [
@@ -522,6 +674,7 @@ const ManageToken = () => {
           { label: "To Address", type: "address" },
           { label: "Amount", type: "number" },
         ],
+        signature: "transfer(address,uint256)",
       },
       {
         name: "approve",
@@ -530,6 +683,7 @@ const ManageToken = () => {
           { label: "Spender Address", type: "address" },
           { label: "Amount", type: "number" },
         ],
+        signature: "approve(address,uint256)",
       },
       {
         name: "transferFrom",
@@ -539,6 +693,7 @@ const ManageToken = () => {
           { label: "To Address", type: "address" },
           { label: "Amount", type: "number" },
         ],
+        signature: "transferFrom(address,address,uint256)",
       },
       {
         name: "increaseAllowance",
@@ -547,6 +702,7 @@ const ManageToken = () => {
           { label: "Spender Address", type: "address" },
           { label: "Added Value", type: "number" },
         ],
+        signature: "increaseAllowance(address,uint256)",
       },
       {
         name: "decreaseAllowance",
@@ -555,6 +711,7 @@ const ManageToken = () => {
           { label: "Spender Address", type: "address" },
           { label: "Subtracted Value", type: "number" },
         ],
+        signature: "decreaseAllowance(address,uint256)",
       },
       {
         name: "mint",
@@ -564,35 +721,80 @@ const ManageToken = () => {
           { label: "Amount", type: "number" },
         ],
         ownerOnly: true,
+        signature: "mint(address,uint256)",
       },
       {
         name: "burn",
         args: ["amount"],
         inputs: [{ label: "Amount", type: "number" }],
+        signature: "burn(uint256)",
+      },
+      {
+        name: "burnFrom",
+        args: ["account", "amount"],
+        inputs: [
+          { label: "Account Address", type: "address" },
+          { label: "Amount", type: "number" },
+        ],
+        signature: "burnFrom(address,uint256)",
       },
       {
         name: "pause",
         args: [],
         inputs: [],
         ownerOnly: true,
+        signature: "pause()",
       },
       {
         name: "unpause",
         args: [],
         inputs: [],
         ownerOnly: true,
+        signature: "pause()",
       },
       {
-        name: "renounceOwnership",
-        args: [],
-        inputs: [],
+        name: "grantRole",
+        args: ["role", "account"],
+        inputs: [
+          { label: "Role (bytes32)", type: "text" },
+          { label: "Account Address", type: "address" },
+        ],
         ownerOnly: true,
+        signature: "grantRole(bytes32,address)",
+      },
+      {
+        name: "revokeRole",
+        args: ["role", "account"],
+        inputs: [
+          { label: "Role (bytes32)", type: "text" },
+          { label: "Account Address", type: "address" },
+        ],
+        ownerOnly: true,
+        signature: "revokeRole(bytes32,address)",
+      },
+      {
+        name: "renounceRole",
+        args: ["role", "account"],
+        inputs: [
+          { label: "Role (bytes32)", type: "text" },
+          { label: "Account Address", type: "address" },
+        ],
+        ownerOnly: true,
+        signature: "renounceRole(bytes32,address)",
       },
       {
         name: "transferOwnership",
         args: ["newOwner"],
         inputs: [{ label: "New Owner Address", type: "address" }],
         ownerOnly: true,
+        signature: "transferOwnership(address)",
+      },
+      {
+        name: "renounceOwnership",
+        args: [],
+        inputs: [],
+        ownerOnly: true,
+        signature: "renounceOwnership()",
       },
     ],
     erc721: [
@@ -601,6 +803,7 @@ const ManageToken = () => {
         args: ["to"],
         inputs: [{ label: "To Address", type: "address" }],
         ownerOnly: true,
+        signature: "mint(address)",
       },
       {
         name: "mintWithURI",
@@ -610,12 +813,41 @@ const ManageToken = () => {
           { label: "Token URI", type: "text" },
         ],
         ownerOnly: true,
+        signature: "mintWithURI(address,string)",
+      },
+      {
+        name: "safeMint",
+        args: ["to"],
+        inputs: [{ label: "To Address", type: "address" }],
+        ownerOnly: true,
+        signature: "safeMint(address)",
+      },
+      {
+        name: "safeMintWithURI",
+        args: ["to", "uri"],
+        inputs: [
+          { label: "To Address", type: "address" },
+          { label: "Token URI", type: "text" },
+        ],
+        ownerOnly: true,
+        signature: "safeMintWithURI(address,string)",
       },
       {
         name: "setBaseURI",
         args: ["baseURI"],
         inputs: [{ label: "Base URI", type: "text" }],
         ownerOnly: true,
+        signature: "setBaseURI(string)",
+      },
+      {
+        name: "setTokenURI",
+        args: ["tokenId", "uri"],
+        inputs: [
+          { label: "Token ID", type: "number" },
+          { label: "Token URI", type: "text" },
+        ],
+        ownerOnly: true,
+        signature: "setTokenURI(uint256,string)",
       },
       {
         name: "approve",
@@ -624,6 +856,7 @@ const ManageToken = () => {
           { label: "To Address", type: "address" },
           { label: "Token ID", type: "number" },
         ],
+        signature: "approve(address,uint256)",
       },
       {
         name: "setApprovalForAll",
@@ -632,6 +865,7 @@ const ManageToken = () => {
           { label: "Operator Address", type: "address" },
           { label: "Approved", type: "checkbox" },
         ],
+        signature: "setApprovalForAll(address,bool)",
       },
       {
         name: "transferFrom",
@@ -641,6 +875,7 @@ const ManageToken = () => {
           { label: "To Address", type: "address" },
           { label: "Token ID", type: "number" },
         ],
+        signature: "transferFrom(address,address,uint256)",
       },
       {
         name: "safeTransferFrom",
@@ -650,9 +885,10 @@ const ManageToken = () => {
           { label: "To Address", type: "address" },
           { label: "Token ID", type: "number" },
         ],
+        signature: "safeTransferFrom(address,address,uint256)",
       },
       {
-        name: "safeTransferFrom",
+        name: "safeTransfersFrom",
         args: ["from", "to", "tokenId", "data"],
         inputs: [
           { label: "From Address", type: "address" },
@@ -660,30 +896,71 @@ const ManageToken = () => {
           { label: "Token ID", type: "number" },
           { label: "Data", type: "text", default: "0x" },
         ],
+        signature: "safeTransfersFrom(address,address,uint256,bytes)",
+      },
+      {
+        name: "burn",
+        args: ["tokenId"],
+        inputs: [{ label: "Token ID", type: "number" }],
+        signature: "burn(uint256)",
       },
       {
         name: "pause",
         args: [],
         inputs: [],
         ownerOnly: true,
+        signature: "pause()",
       },
       {
         name: "unpause",
         args: [],
         inputs: [],
         ownerOnly: true,
+        signature: "pause()",
       },
       {
-        name: "renounceOwnership",
-        args: [],
-        inputs: [],
+        name: "grantRole",
+        args: ["role", "account"],
+        inputs: [
+          { label: "Role (bytes32)", type: "text" },
+          { label: "Account Address", type: "address" },
+        ],
         ownerOnly: true,
+        signature: "grantRole(bytes32,address)",
+      },
+      {
+        name: "revokeRole",
+        args: ["role", "account"],
+        inputs: [
+          { label: "Role (bytes32)", type: "text" },
+          { label: "Account Address", type: "address" },
+        ],
+        ownerOnly: true,
+        signature: "revokeRole(bytes32,address)",
+      },
+      {
+        name: "renounceRole",
+        args: ["role", "account"],
+        inputs: [
+          { label: "Role (bytes32)", type: "text" },
+          { label: "Account Address", type: "address" },
+        ],
+        ownerOnly: true,
+        signature: "renounceRole(bytes32,address)",
       },
       {
         name: "transferOwnership",
         args: ["newOwner"],
         inputs: [{ label: "New Owner Address", type: "address" }],
         ownerOnly: true,
+        signature: "transferOwnership(address)",
+      },
+      {
+        name: "renounceOwnership",
+        args: [],
+        inputs: [],
+        ownerOnly: true,
+        signature: "renounceOwnership()",
       },
     ],
     erc1155: [
@@ -697,12 +974,46 @@ const ManageToken = () => {
           { label: "Data", type: "text", default: "0x" },
         ],
         ownerOnly: true,
+        signature: "mint(address,uint256,uint256,bytes)",
+      },
+      {
+        name: "mintBatch",
+        args: ["to", "ids", "amounts", "data"],
+        inputs: [
+          { label: "To Address", type: "address" },
+          { label: "Token IDs (comma-separated)", type: "text" },
+          { label: "Amounts (comma-separated)", type: "text" },
+          { label: "Data", type: "text", default: "0x" },
+        ],
+        ownerOnly: true,
+        signature: "mintBatch(address,uint256[],uint256[],bytes)",
+      },
+      {
+        name: "burn",
+        args: ["account", "id", "amount"],
+        inputs: [
+          { label: "Account Address", type: "address" },
+          { label: "Token ID", type: "number" },
+          { label: "Amount", type: "number" },
+        ],
+        signature: "burn(address,uint256,uint256)",
+      },
+      {
+        name: "burnBatch",
+        args: ["account", "ids", "amounts"],
+        inputs: [
+          { label: "Account Address", type: "address" },
+          { label: "Token IDs (comma-separated)", type: "text" },
+          { label: "Amounts (comma-separated)", type: "text" },
+        ],
+        signature: "burnBatch(address,uint256[],uint256[])",
       },
       {
         name: "setURI",
         args: ["newuri"],
         inputs: [{ label: "New URI", type: "text" }],
         ownerOnly: true,
+        signature: "setURI(string)",
       },
       {
         name: "setTokenURI",
@@ -712,6 +1023,7 @@ const ManageToken = () => {
           { label: "Token URI", type: "text" },
         ],
         ownerOnly: true,
+        signature: "setTokenURI(uint256,string)",
       },
       {
         name: "setApprovalForAll",
@@ -720,6 +1032,7 @@ const ManageToken = () => {
           { label: "Operator Address", type: "address" },
           { label: "Approved", type: "checkbox" },
         ],
+        signature: "setApprovalForAll(address,bool)",
       },
       {
         name: "safeTransferFrom",
@@ -731,6 +1044,7 @@ const ManageToken = () => {
           { label: "Amount", type: "number" },
           { label: "Data", type: "text", default: "0x" },
         ],
+        signature: "safeTransferFrom(address,address,uint256,uint256,bytes)",
       },
       {
         name: "safeBatchTransferFrom",
@@ -742,30 +1056,66 @@ const ManageToken = () => {
           { label: "Amounts (comma-separated)", type: "text" },
           { label: "Data", type: "text", default: "0x" },
         ],
+        signature:
+          "safeBatchTransferFrom(address,address,uint256[],uint256[],bytes)",
       },
       {
         name: "pause",
         args: [],
         inputs: [],
         ownerOnly: true,
+        signature: "pause()",
       },
       {
         name: "unpause",
         args: [],
         inputs: [],
         ownerOnly: true,
+        signature: "pause()",
       },
       {
-        name: "renounceOwnership",
-        args: [],
-        inputs: [],
+        name: "grantRole",
+        args: ["role", "account"],
+        inputs: [
+          { label: "Role (bytes32)", type: "text" },
+          { label: "Account Address", type: "address" },
+        ],
         ownerOnly: true,
+        signature: "grantRole(bytes32,address)",
+      },
+      {
+        name: "revokeRole",
+        args: ["role", "account"],
+        inputs: [
+          { label: "Role (bytes32)", type: "text" },
+          { label: "Account Address", type: "address" },
+        ],
+        ownerOnly: true,
+        signature: "revokeRole(bytes32,address)",
+      },
+      {
+        name: "renounceRole",
+        args: ["role", "account"],
+        inputs: [
+          { label: "Role (bytes32)", type: "text" },
+          { label: "Account Address", type: "address" },
+        ],
+        ownerOnly: true,
+        signature: "renounceRole(bytes32,address)",
       },
       {
         name: "transferOwnership",
         args: ["newOwner"],
         inputs: [{ label: "New Owner Address", type: "address" }],
         ownerOnly: true,
+        signature: "transferOwnership(address)",
+      },
+      {
+        name: "renounceOwnership",
+        args: [],
+        inputs: [],
+        ownerOnly: true,
+        signature: "renounceOwnership()",
       },
     ],
     meme: [
@@ -776,6 +1126,7 @@ const ManageToken = () => {
           { label: "To Address", type: "address" },
           { label: "Amount", type: "number" },
         ],
+        signature: "transfer(address,uint256)",
       },
       {
         name: "approve",
@@ -784,6 +1135,7 @@ const ManageToken = () => {
           { label: "Spender Address", type: "address" },
           { label: "Amount", type: "number" },
         ],
+        signature: "approve(address,uint256)",
       },
       {
         name: "transferFrom",
@@ -793,6 +1145,7 @@ const ManageToken = () => {
           { label: "To Address", type: "address" },
           { label: "Amount", type: "number" },
         ],
+        signature: "transferFrom(address,address,uint256)",
       },
       {
         name: "increaseAllowance",
@@ -801,6 +1154,7 @@ const ManageToken = () => {
           { label: "Spender Address", type: "address" },
           { label: "Added Value", type: "number" },
         ],
+        signature: "increaseAllowance(address,uint256)",
       },
       {
         name: "decreaseAllowance",
@@ -809,6 +1163,7 @@ const ManageToken = () => {
           { label: "Spender Address", type: "address" },
           { label: "Subtracted Value", type: "number" },
         ],
+        signature: "decreaseAllowance(address,uint256)",
       },
       {
         name: "mint",
@@ -818,23 +1173,36 @@ const ManageToken = () => {
           { label: "Amount", type: "number" },
         ],
         ownerOnly: true,
+        signature: "mint(address,uint256)",
       },
       {
         name: "burn",
         args: ["amount"],
         inputs: [{ label: "Amount", type: "number" }],
+        signature: "burn(uint256)",
+      },
+      {
+        name: "burnFrom",
+        args: ["account", "amount"],
+        inputs: [
+          { label: "Account Address", type: "address" },
+          { label: "Amount", type: "number" },
+        ],
+        signature: "burnFrom(address,uint256)",
       },
       {
         name: "setMaxWalletSize",
         args: ["amount"],
         inputs: [{ label: "Max Wallet Size", type: "number" }],
         ownerOnly: true,
+        signature: "setMaxWalletSize(uint96)",
       },
       {
         name: "setMaxTransactionAmount",
         args: ["amount"],
         inputs: [{ label: "Max Transaction Amount", type: "number" }],
         ownerOnly: true,
+        signature: "setMaxTransactionAmount(uint96)",
       },
       {
         name: "excludeFromLimits",
@@ -844,30 +1212,48 @@ const ManageToken = () => {
           { label: "Excluded", type: "checkbox" },
         ],
         ownerOnly: true,
+        signature: "excludeFromLimits(address,bool)",
       },
       {
         name: "pause",
         args: [],
         inputs: [],
         ownerOnly: true,
+        signature: "pause()",
       },
       {
         name: "unpause",
         args: [],
         inputs: [],
         ownerOnly: true,
+        signature: "pause()",
       },
       {
-        name: "renounceOwnership",
-        args: [],
-        inputs: [],
+        name: "grantRole",
+        args: ["role", "account"],
+        inputs: [
+          { label: "Role (bytes32)", type: "text" },
+          { label: "Account Address", type: "address" },
+        ],
         ownerOnly: true,
+        signature: "grantRole(bytes32,address)",
+      },
+      {
+        name: "revokeRole",
+        args: ["role", "account"],
+        inputs: [
+          { label: "Role (bytes32)", type: "text" },
+          { label: "Account Address", type: "address" },
+        ],
+        ownerOnly: true,
+        signature: "revokeRole(bytes32,address)",
       },
       {
         name: "transferOwnership",
         args: ["newOwner"],
         inputs: [{ label: "New Owner Address", type: "address" }],
         ownerOnly: true,
+        signature: "transferOwnership(address)",
       },
     ],
     stable: [
@@ -878,6 +1264,7 @@ const ManageToken = () => {
           { label: "To Address", type: "address" },
           { label: "Amount", type: "number" },
         ],
+        signature: "transfer(address,uint256)",
       },
       {
         name: "approve",
@@ -886,6 +1273,7 @@ const ManageToken = () => {
           { label: "Spender Address", type: "address" },
           { label: "Amount", type: "number" },
         ],
+        signature: "approve(address,uint256)",
       },
       {
         name: "transferFrom",
@@ -895,6 +1283,7 @@ const ManageToken = () => {
           { label: "To Address", type: "address" },
           { label: "Amount", type: "number" },
         ],
+        signature: "transferFrom(address,address,uint256)",
       },
       {
         name: "increaseAllowance",
@@ -903,6 +1292,7 @@ const ManageToken = () => {
           { label: "Spender Address", type: "address" },
           { label: "Added Value", type: "number" },
         ],
+        signature: "increaseAllowance(address,uint256)",
       },
       {
         name: "decreaseAllowance",
@@ -911,27 +1301,41 @@ const ManageToken = () => {
           { label: "Spender Address", type: "address" },
           { label: "Subtracted Value", type: "number" },
         ],
+        signature: "decreaseAllowance(address,uint256)",
       },
       {
         name: "mint",
         args: ["collateralAmount"],
         inputs: [{ label: "Collateral Amount", type: "number" }],
+        signature: "mint(uint256)",
       },
       {
         name: "redeem",
         args: ["tokenAmount"],
         inputs: [{ label: "Token Amount", type: "number" }],
+        signature: "redeem(uint256)",
       },
       {
         name: "burn",
         args: ["amount"],
         inputs: [{ label: "Amount", type: "number" }],
+        signature: "burn(uint256)",
+      },
+      {
+        name: "burnFrom",
+        args: ["account", "amount"],
+        inputs: [
+          { label: "Account Address", type: "address" },
+          { label: "Amount", type: "number" },
+        ],
+        signature: "burnFrom(address,uint256)",
       },
       {
         name: "setCollateralRatio",
         args: ["_collateralRatio"],
         inputs: [{ label: "Collateral Ratio", type: "number" }],
         ownerOnly: true,
+        signature: "setCollateralRatio(uint96)",
       },
       {
         name: "setFees",
@@ -941,39 +1345,76 @@ const ManageToken = () => {
           { label: "Redeem Fee", type: "number" },
         ],
         ownerOnly: true,
+        signature: "setFees(uint32,uint32)",
       },
       {
         name: "setTreasury",
         args: ["_treasury"],
         inputs: [{ label: "Treasury Address", type: "address" }],
         ownerOnly: true,
+        signature: "setTreasury(address)",
       },
       {
         name: "pause",
         args: [],
         inputs: [],
         ownerOnly: true,
+        signature: "pause()",
       },
       {
         name: "unpause",
         args: [],
         inputs: [],
         ownerOnly: true,
+        signature: "pause()",
       },
       {
-        name: "renounceOwnership",
-        args: [],
-        inputs: [],
+        name: "grantRole",
+        args: ["role", "account"],
+        inputs: [
+          { label: "Role (bytes32)", type: "text" },
+          { label: "Account Address", type: "address" },
+        ],
         ownerOnly: true,
+        signature: "grantRole(bytes32,address)",
       },
       {
         name: "transferOwnership",
         args: ["newOwner"],
         inputs: [{ label: "New Owner Address", type: "address" }],
         ownerOnly: true,
+        signature: "transferOwnership(address)",
       },
     ],
   };
+
+  // --- UPDATED AND CORRECTED: Filter write functions based on enabled features ---
+  // This is the new, fully corrected block
+  const filteredWriteFunctions = (() => {
+    // This explicit guard makes the code much safer and satisfies TypeScript
+    if (!tokenType || !enabledFeatures || factoryTokenType === null) {
+      return [];
+    }
+
+    // Add this check to ensure enabledFeatures is an array
+    if (!Array.isArray(enabledFeatures)) {
+      return [];
+    }
+
+    return writeFunctions[tokenType].filter((action) => {
+      const featureIndex = featureOptionsMap[factoryTokenType].findIndex(
+        (f) => f.signature === action.signature
+      );
+
+      if (featureIndex === -1) {
+        return false;
+      }
+
+      const isFeatureEnabled = enabledFeatures[featureIndex] as boolean;
+
+      return isFeatureEnabled && (!action.ownerOnly || isOwner);
+    });
+  })();
 
   // Execute write function
   const handleWrite = async (e: React.FormEvent) => {
@@ -983,8 +1424,12 @@ const ManageToken = () => {
       return;
     }
 
-    if (chainId !== BASE_SEPOLIA_CHAIN_ID) {
-      setError("Please connect to Base Sepolia network");
+    // if (chainId !== BASE_SEPOLIA_CHAIN_ID) {
+    //   setError("Please connect to Base Sepolia network");
+    //   return;
+    // }
+    if (chainId !== LISK_SEPOLIA_CHAIN_ID) {
+      setError("Please connect to Lisk Sepolia network");
       return;
     }
 
@@ -998,10 +1443,10 @@ const ManageToken = () => {
 
     try {
       const args = action.args.map((arg, index) => {
-        // Use input label as key, mapped to arg name
         const input = action.inputs[index];
         const value = formInputs[input.label];
-        if (value === undefined) throw new Error(`Missing ${arg}`);
+        if (value === undefined && input.type !== "checkbox")
+          throw new Error(`Missing ${arg}`);
         if (
           arg.includes("address") ||
           arg.includes("to") ||
@@ -1012,7 +1457,12 @@ const ManageToken = () => {
           arg.includes("treasury") ||
           arg.includes("newOwner")
         ) {
-          if (!isAddress(value)) throw new Error(`Invalid address for ${arg}`);
+          if (
+            !isAddress(value) ||
+            value === "0x0000000000000000000000000000000000000000"
+          ) {
+            throw new Error(`Invalid address for ${arg}`);
+          }
           return value;
         }
         if (
@@ -1026,11 +1476,23 @@ const ManageToken = () => {
           arg.includes("collateralAmount") ||
           arg.includes("tokenAmount")
         ) {
+          if (value === "") throw new Error(`Value for ${arg} cannot be empty`);
           const num = Number(value);
           if (isNaN(num)) throw new Error(`Invalid number for ${arg}`);
           if (num < 0) throw new Error(`Number cannot be negative for ${arg}`);
-          if (value === "") throw new Error(`Value for ${arg} cannot be empty`);
-          return BigInt(num);
+          if (arg === "_collateralRatio" && num < 10000)
+            throw new Error("Collateral ratio must be at least 10000");
+          if ((arg === "_mintFee" || arg === "_redeemFee") && num > 500)
+            throw new Error("Fee cannot exceed 500");
+          if (
+            (arg.includes("amount") ||
+              arg.includes("collateralAmount") ||
+              arg.includes("tokenAmount")) &&
+            num === 0
+          ) {
+            throw new Error(`Amount for ${arg} must be greater than 0`);
+          }
+          return BigInt(value.toString().replace(/,/g, ""));
         }
         if (arg === "ids" || arg === "amounts") {
           const values = value.split(",").map((v) => {
@@ -1042,7 +1504,12 @@ const ManageToken = () => {
           return values;
         }
         if (arg === "approved" || arg === "excluded") {
-          return value === "true";
+          // Handles checkbox which might not be in formInputs if unchecked
+          return formInputs[input.label] === "true";
+        }
+        if (arg === "role") {
+          // Convert role string to bytes32
+          return keccak256(toBytes(value));
         }
         return value;
       });
@@ -1070,8 +1537,28 @@ const ManageToken = () => {
       setInputErrors({});
       setError(null);
     } catch (err: unknown) {
+      const errorMap: Record<string, string> = {
+        InvalidDecimals: "Decimals must be 18 or less",
+        InvalidAmount: "Amount must be greater than 0",
+        FeatureNotEnabled: "This feature is not enabled for the token",
+        ExceedsMaxTransaction: "Transaction amount exceeds max limit",
+        ExceedsMaxWalletSize: "Wallet size exceeds max limit",
+        InvalidCollateralAmount: "Collateral amount must be greater than 0",
+        InsufficientBalance: "Insufficient token balance",
+        InsufficientCollateral: "Insufficient collateral deposited",
+        InvalidFees: "Mint or redeem fees must be 500 or less",
+        InvalidTreasury: "Invalid treasury address",
+        TransferFailed: "Token transfer failed",
+        AlreadyInitialized: "Token already initialized",
+      };
       const errorMessage =
-        err instanceof Error ? err.message : "Transaction failed";
+        err instanceof Error
+          ? Object.keys(errorMap).find((key) => err.message.includes(key))
+            ? errorMap[
+                Object.keys(errorMap).find((key) => err.message.includes(key))!
+              ]
+            : err.message
+          : "Transaction failed";
       setError(errorMessage);
     }
   };
@@ -1096,15 +1583,14 @@ const ManageToken = () => {
   }) => {
     const [isQueryTriggered, setIsQueryTriggered] = useState(false);
 
-    // Handle dynamic args for functions
     const dynamicArgs = (func.args || []).map((arg: unknown, index: number) => {
       if (typeof arg === "string" && arg === "" && isQuery) {
-        return formInputs[`${func.name}_${inputLabels[index]}`] || "";
+        const value = formInputs[`${func.name}_${inputLabels[index]}`] || "";
+        return inputLabels[index].includes("ID") ? BigInt(value || 0) : value;
       }
       return arg;
     });
 
-    // Reset query trigger when inputs change
     useEffect(() => {
       if (isQuery) {
         setIsQueryTriggered(false);
@@ -1131,7 +1617,7 @@ const ManageToken = () => {
     });
 
     return (
-      <div className="bg-[#1E1425]/80 rounded-xl p-4">
+      <div className="bg-[#1E1425]/80 backdrop-blur-sm rounded-xl p-4 border border-purple-500/20">
         <p className="text-gray-300 text-sm font-medium">{func.label}</p>
         {isQuery && (
           <div className="mt-2 space-y-2">
@@ -1147,7 +1633,8 @@ const ManageToken = () => {
                     handleInputChange(
                       `${func.name}_${label}`,
                       e.target.value,
-                      label.includes("ID")
+                      label.includes("ID"),
+                      label
                     )
                   }
                   className={`w-full p-2 bg-[#2A1F36] border border-gray-800 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500 ${
@@ -1196,7 +1683,7 @@ const ManageToken = () => {
 
     return (
       <div className="fixed inset-0 flex items-center justify-center z-50">
-        <div className="bg-[#1E1425] p-6 rounded-xl max-w-md w-full border border-purple-500/20 shadow-2xl">
+        <div className="bg-[#1E1425]/80 backdrop-blur-sm p-6 rounded-xl max-w-md w-full border border-purple-500/20 shadow-2xl">
           <h3 className="text-xl text-white font-semibold mb-4">
             {action.name}
           </h3>
@@ -1229,7 +1716,8 @@ const ManageToken = () => {
                         handleInputChange(
                           input.label,
                           e.target.value,
-                          input.type === "number"
+                          input.type === "number",
+                          input.label
                         )
                       }
                       placeholder={input.label}
@@ -1282,7 +1770,7 @@ const ManageToken = () => {
     );
   };
 
-  if (loading || tokenInfoLoading) {
+  if (loading || tokenInfoLoading || featuresLoading) {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-[#1A0D23] to-[#2A1F36] relative">
@@ -1337,7 +1825,7 @@ const ManageToken = () => {
               <h2 className="font-poppins font-semibold text-2xl md:text-3xl text-white mb-6">
                 Token Information
               </h2>
-              <div className="bg-gradient-to-r from-[#2A1F36]/80 to-[#1E1425]/80 rounded-2xl p-6 shadow-lg">
+              <div className="bg-[#1E1425]/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-purple-500/20">
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                   {staticReadFunctions[tokenType].map((func) => (
                     <ReadCard key={func.name} func={func} />
@@ -1352,18 +1840,16 @@ const ManageToken = () => {
                 Token Actions
               </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {writeFunctions[tokenType]
-                  .filter((action) => !action.ownerOnly || isOwner)
-                  .map((action) => (
-                    <button
-                      key={action.name}
-                      onClick={() => openModal(action.name)}
-                      disabled={isPending}
-                      className="p-4 bg-[#1E1425]/80 border border-purple-500/20 rounded-xl text-white text-lg font-medium hover:bg-gradient-to-r hover:from-purple-500/20 hover:to-blue-600/20 hover:scale-105 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {action.name}
-                    </button>
-                  ))}
+                {filteredWriteFunctions.map((action) => (
+                  <button
+                    key={action.name}
+                    onClick={() => openModal(action.name)}
+                    disabled={isPending}
+                    className="p-4 bg-[#1E1425]/80 border border-purple-500/20 rounded-xl text-white text-lg font-medium hover:bg-gradient-to-r hover:from-purple-500/20 hover:to-blue-600/20 hover:scale-105 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {action.name}
+                  </button>
+                ))}
               </div>
             </div>
 
@@ -1372,19 +1858,21 @@ const ManageToken = () => {
               <h2 className="font-poppins font-semibold text-2xl md:text-3xl text-white mb-6">
                 Query Token Data
               </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {queryReadFunctions[tokenType].map((func) => (
-                  <ReadCard
-                    key={func.name}
-                    func={{
-                      name: func.name,
-                      label: func.label,
-                      args: func.inputLabels.map(() => ""),
-                    }}
-                    isQuery={true}
-                    inputLabels={func.inputLabels}
-                  />
-                ))}
+              <div className="bg-[#1E1425]/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-purple-500/20">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {queryReadFunctions[tokenType].map((func) => (
+                    <ReadCard
+                      key={func.name}
+                      func={{
+                        name: func.name,
+                        label: func.label,
+                        args: func.inputLabels.map(() => ""),
+                      }}
+                      isQuery={true}
+                      inputLabels={func.inputLabels}
+                    />
+                  ))}
+                </div>
               </div>
             </div>
           </div>
