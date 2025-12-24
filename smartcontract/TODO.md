@@ -14,7 +14,7 @@ This file contains all GitHub issues for the SmartX smart contracts. Each issue 
 
 **Description:**
 
-Set up Hardhat project with proper configuration for Base Sepolia testnet. Configure compiler settings, network settings, and necessary plugins.
+Set up Hardhat project with proper configuration for Base Mainnet. Configure compiler settings, network settings, and necessary plugins.
 
 **Acceptance Criteria:**
 
@@ -38,10 +38,10 @@ Set up Hardhat project with proper configuration for Base Sepolia testnet. Confi
 - Use Hardhat version ^2.19.0 or latest
 - Install: `@nomicfoundation/hardhat-toolbox`
 - Configure Base Sepolia RPC: `https://sepolia.base.org`
-- Chain ID: 84532
+- Chain ID: 8453
 - Solidity optimizer enabled with 200 runs
 
-**Completed:** All acceptance criteria met. Project structure created, dependencies installed, and Hardhat configured for Base Sepolia testnet.
+**Completed:** All acceptance criteria met. Project structure created, dependencies installed, and Hardhat configured for Base Mainnet.
 
 ---
 
@@ -227,7 +227,7 @@ Integrate Chainlink Price Feeds into UserVault contract to provide real-time USD
 
 **Implementation Notes:**
 
-- Use Chainlink Price Feeds available on Base Sepolia testnet
+- Use Chainlink Price Feeds available on Base Mainnet
 - Handle price feed decimals correctly (usually 8 decimals)
 - Implement fallback mechanism for price feed failures
 - Consider staleness checks for price data
@@ -236,9 +236,9 @@ Integrate Chainlink Price Feeds into UserVault contract to provide real-time USD
   - USDC/USD: Available on Base Sepolia
   - Add more as needed
 
-**Base Sepolia Price Feed Addresses:**
-- ETH/USD: `0x4aDC67696bA383F43DD60A9e78F2C97Fbbfc7cb1`
-- USDC/USD: Check Chainlink docs for latest
+**Base Mainnet Price Feed Addresses:**
+- ETH/USD: `0x71041dddad3595F745215C98a901844ED99Db595`
+- USDC/USD: `0x7e860098F58bBFC8648a4311b374B1D669a2bc6B`
 
 **Example Implementation:**
 ```solidity
@@ -447,7 +447,7 @@ Implement Aave protocol integration in UserVault. Allow vault to deploy assets t
 - Use Aave's IPool interface
 - Need to handle aToken accounting
 - Consider gas costs for protocol interactions
-- Test with Aave testnet contracts
+- Test with Aave contracts
 
 ---
 
@@ -488,7 +488,7 @@ Implement Compound protocol integration in UserVault. Allow vault to deploy asse
 - Use Compound's cToken interface
 - Need to handle cToken accounting
 - Compound uses exchange rate for asset conversion
-- Test with Compound testnet contracts
+- Test with Compound contracts
 
 ---
 
@@ -658,8 +658,8 @@ Write integration tests covering the full workflow: user registration, vault cre
   - [ ] Protocol allocation configuration
   - [ ] Share transfers between users
 - [ ] Protocol integration tests:
-  - [ ] Deploy to Aave (if testnet available)
-  - [ ] Deploy to Compound (if testnet available)
+  - [ ] Deploy to Aave
+  - [ ] Deploy to Compound
   - [ ] Withdraw from protocols
 - [ ] Edge case scenarios:
   - [ ] Large deposits/withdrawals

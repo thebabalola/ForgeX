@@ -34,8 +34,8 @@ const config: HardhatUserConfig = {
       },
     ],
   },
-  // Primary deployment target: Base Sepolia (testnet) and Base (mainnet)
-  defaultNetwork: "baseSepolia", // Use "base" for mainnet deployment
+  // Primary deployment target: Base Mainnet
+  defaultNetwork: "base",
   networks: {
     // View the networks that are pre-configured.
     // If the network you are looking for is not here you can add new network settings
@@ -99,11 +99,7 @@ const config: HardhatUserConfig = {
     },
     base: {
       url: "https://mainnet.base.org",
-      accounts: [deployerPrivateKey],
-    },
-    baseSepolia: {
-      url: "https://sepolia.base.org",
-      chainId: 84532,
+      chainId: 8453,
       accounts: [deployerPrivateKey],
     },
     scrollSepolia: {
@@ -129,7 +125,6 @@ const config: HardhatUserConfig = {
       mainnet: etherscanApiKey,
       sepolia: etherscanApiKey,
       base: etherscanApiKey,
-      baseSepolia: etherscanApiKey,
       celo: process.env.CELOSCAN_API_KEY || etherscanApiKey, // Celo uses Celoscan
       celoAlfajores: process.env.CELOSCAN_API_KEY || etherscanApiKey,
     },

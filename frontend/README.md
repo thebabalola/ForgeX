@@ -1,6 +1,6 @@
 # SmartX — Frontend
 
-A modern Next.js frontend for SmartX - a decentralized vault platform enabling users to create multiple ERC-4626 compliant vaults for automated yield generation. Built with TypeScript, Tailwind CSS, and wagmi for Base Sepolia testnet.
+A modern Next.js frontend for SmartX - a decentralized vault platform enabling users to create multiple ERC-4626 compliant vaults for automated yield generation. Built with TypeScript, Tailwind CSS, and wagmi for Base Mainnet.
 
 ## Overview
 
@@ -33,7 +33,7 @@ SmartX is a comprehensive DeFi platform that allows users to:
 - **Real-time performance tracking**
 - **Yield harvesting** and compounding
 
-Built for Ethereum-compatible chains, with primary deployment on Base Sepolia testnet.
+Built for Ethereum-compatible chains, with primary deployment on Base Mainnet.
 
 ## Tech Stack
 
@@ -120,16 +120,16 @@ Create a `.env.local` file:
 ```env
 NEXT_PUBLIC_REOWN_PROJECT_ID=your_project_id
 NEXT_PUBLIC_VAULT_FACTORY_ADDRESS=0x...
-NEXT_PUBLIC_NETWORK=base-sepolia
+NEXT_PUBLIC_NETWORK=base
 ```
 
-**Note:** Contract addresses will be provided after deployment to Base Sepolia testnet.
+**Note:** Contract addresses will be provided after deployment to Base Mainnet.
 
 ## Network Configuration
 
-- **Network:** Base Sepolia Testnet
-- **Chain ID:** 84532
-- **Explorer:** [Base Sepolia Explorer](https://sepolia.basescan.org/)
+- **Network:** Base Mainnet
+- **Chain ID:** 8453
+- **Explorer:** [BaseScan](https://basescan.org/)
 
 ## License
 

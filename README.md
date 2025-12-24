@@ -1,6 +1,6 @@
 # SmartX
 
-A decentralized vault platform enabling users to create multiple ERC-4626 compliant vaults for automated yield generation on Base Sepolia testnet.
+A decentralized vault platform enabling users to create multiple ERC-4626 compliant vaults for automated yield generation on Base Mainnet.
 
 ## Overview
 
@@ -34,7 +34,7 @@ SmartX/
 ### Smart Contracts
 - **Language:** Solidity ^0.8.20
 - **Framework:** Hardhat
-- **Network:** Base Sepolia Testnet
+- **Network:** Base Mainnet
 - **Standards:** ERC-4626, ERC-20
 
 ### Frontend
@@ -92,11 +92,10 @@ Open [http://localhost:3000](http://localhost:3000) to view the app.
 
 ## Network Configuration
 
-### Base Sepolia Testnet
-- **Chain ID:** 84532
-- **RPC URL:** `https://sepolia.base.org`
-- **Explorer:** [Base Sepolia Explorer](https://sepolia.basescan.org/)
-- **Faucet:** [Base Sepolia Faucet](https://www.coinbase.com/faucets/base-ethereum-goerli-faucet)
+### Base Mainnet
+- **Chain ID:** 8453
+- **RPC URL:** `https://mainnet.base.org`
+- **Explorer:** [BaseScan](https://basescan.org/)
 
 ## Development
 
@@ -108,7 +107,7 @@ See [smartcontract/README.md](./smartcontract/README.md) for detailed smart cont
 ```bash
 npm run compile      # Compile contracts
 npm run test         # Run tests
-npm run deploy       # Deploy to Base Sepolia
+npm run deploy       # Deploy to Base Mainnet
 ```
 
 ### Frontend
@@ -139,7 +138,7 @@ We welcome contributions! To get started:
 ### Smart Contracts (.env)
 ```env
 PRIVATE_KEY=your_private_key
-BASE_SEPOLIA_RPC_URL=https://sepolia.base.org
+BASE_RPC_URL=https://mainnet.base.org
 ETHERSCAN_API_KEY=your_etherscan_api_key
 ```
 
@@ -147,7 +146,7 @@ ETHERSCAN_API_KEY=your_etherscan_api_key
 ```env
 NEXT_PUBLIC_REOWN_PROJECT_ID=your_project_id
 NEXT_PUBLIC_VAULT_FACTORY_ADDRESS=0x...
-NEXT_PUBLIC_NETWORK=base-sepolia
+NEXT_PUBLIC_NETWORK=base
 ```
 
 **Note:** Never commit your private keys or `.env` files to version control!
@@ -259,7 +258,7 @@ MIT License - see LICENSE file for details.
 ## Links
 
 - **Repository:** [https://github.com/Richiey1/SmartX](https://github.com/Richiey1/SmartX)
-- **Base Sepolia Explorer:** [https://sepolia.basescan.org/](https://sepolia.basescan.org/)
+- **BaseScan Explorer:** [https://basescan.org/](https://basescan.org/)
 - **Documentation:** See individual README files in `smartcontract/` and `frontend/` directories
 
 ## Support

@@ -20,13 +20,13 @@ _(No completed issues yet - ready for contributions!)_
 
 **Description:**
 
-Add wallet connection using Reown AppKit (WalletConnect) + Wagmi. Provide a `Navbar` component that shows connect/disconnect, address and network. Configure for Base Sepolia testnet.
+Add wallet connection using Reown AppKit (WalletConnect) + Wagmi. Provide a `Navbar` component that shows connect/disconnect, address and network. Configure for Base Mainnet.
 
 **Acceptance Criteria:**
 
 - [ ] Users can connect with MetaMask and WalletConnect
 - [ ] Address displays in navbar
-- [ ] Network information displays (Base Sepolia)
+- [ ] Network information displays (Base Mainnet)
 - [ ] Signer is available to send transactions
 - [ ] Disconnect functionality works
 - [ ] Network switching works (with proper prompts)
@@ -36,7 +36,7 @@ Add wallet connection using Reown AppKit (WalletConnect) + Wagmi. Provide a `Nav
 - Navbar component should be created at `components/layout/navbar.tsx`
 - AppKit integration configured in `config/adapter.ts`
 - Wagmi configuration in `config/wagmi.ts`
-- Use Base Sepolia chain ID: 84532
+- Use Base Mainnet chain ID: 8453
 
 ---
 
@@ -50,11 +50,11 @@ Add wallet connection using Reown AppKit (WalletConnect) + Wagmi. Provide a `Nav
 
 **Description:**
 
-Create `config/wagmi.ts` and `config/adapter.ts` to expose providers and signers to the app. Configure for Base Sepolia testnet with proper RPC endpoints.
+Create `config/wagmi.ts` and `config/adapter.ts` to expose providers and signers to the app. Configure for Base Mainnet with proper RPC endpoints.
 
 **Acceptance Criteria:**
 
-- [ ] Wagmi config configured for Base Sepolia
+- [ ] Wagmi config configured for Base Mainnet
 - [ ] Hooks/components can get an ethers provider from the adapter
 - [ ] Hooks/components can get an ethers signer from the adapter
 - [ ] `walletClientToSigner` utility function works
@@ -63,8 +63,8 @@ Create `config/wagmi.ts` and `config/adapter.ts` to expose providers and signers
 
 **Implementation Notes:**
 
-- Base Sepolia RPC: `https://sepolia.base.org`
-- Chain ID: 84532
+- Base Mainnet RPC: `https://mainnet.base.org`
+- Chain ID: 8453
 - Utilities handle viem to ethers conversions correctly
 
 ---
@@ -471,7 +471,7 @@ Create a transaction history component showing all vault-related transactions fo
 
 - Fetch events from contracts using wagmi
 - Parse event logs for transaction details
-- Use Base Sepolia explorer links
+- Use BaseScan explorer links
 - Consider using a subgraph for better performance
 
 ---

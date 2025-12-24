@@ -1,14 +1,14 @@
 {
   "name": "smartx-smartcontracts",
   "version": "0.1.0",
-  "description": "Smart contracts for SmartX - ERC-4626 vault platform on Base Sepolia",
+  "description": "Smart contracts for SmartX - ERC-4626 vault platform on Base Mainnet",
   "main": "index.js",
   "scripts": {
     "compile": "hardhat compile",
     "test": "hardhat test",
     "test:coverage": "hardhat coverage",
-    "deploy:base-sepolia": "hardhat run scripts/deploy.js --network baseSepolia",
-    "verify": "hardhat verify --network baseSepolia",
+    "deploy:base": "hardhat run scripts/deploy.js --network base",
+    "verify": "hardhat verify --network base",
     "lint": "eslint .",
     "format": "prettier --write \"**/*.{js,ts,sol}\""
   },

@@ -1,6 +1,6 @@
 # SmartX — Smart Contracts
 
-Solidity smart contracts for SmartX - a decentralized vault platform enabling users to create multiple ERC-4626 compliant vaults for automated yield generation. Deployed on Base Sepolia testnet.
+Solidity smart contracts for SmartX - a decentralized vault platform enabling users to create multiple ERC-4626 compliant vaults for automated yield generation. Deployed on Base Mainnet.
 
 ## Overview
 
@@ -32,15 +32,15 @@ SmartX smart contracts implement:
 - **Allocation management** across DeFi protocols
 - **Pause/unpause** functionality
 
-Built with Solidity, Hardhat, and deployed on Base Sepolia testnet.
+Built with Solidity, Hardhat, and deployed on Base Mainnet.
 
 ## Tech Stack
 
 - **Language:** Solidity ^0.8.20
 - **Framework:** Hardhat
 - **Testing:** Hardhat Test Suite, Chai
-- **Network:** Base Sepolia Testnet
-- **Chain ID:** 84532
+- **Network:** Base Mainnet
+- **Chain ID:** 8453
 
 ## Quick Start
 
@@ -54,8 +54,8 @@ npx hardhat compile
 # Run tests
 npx hardhat test
 
-# Deploy to Base Sepolia
-npx hardhat run scripts/deploy.js --network baseSepolia
+# Deploy to Base Mainnet
+npx hardhat run scripts/deploy.js --network base
 ```
 
 ## Project Structure
@@ -141,7 +141,7 @@ Create a `.env` file:
 
 ```env
 PRIVATE_KEY=your_private_key
-BASE_SEPOLIA_RPC_URL=https://sepolia.base.org
+BASE_RPC_URL=https://mainnet.base.org
 ETHERSCAN_API_KEY=your_etherscan_api_key
 ```
 
