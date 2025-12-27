@@ -35,6 +35,18 @@ contract VaultFactory is Ownable {
     /// @dev Thrown when vault deployment fails
     error VaultCreationFailed();
 
+    /// @dev Thrown when caller is not an admin
+    error NotAdmin();
+
+    /// @dev Thrown when adding an admin that already exists
+    error AdminAlreadyExists();
+
+    /// @dev Thrown when removing an admin that does not exist
+    error AdminDoesNotExist();
+
+    /// @dev Thrown when trying to remove the deployer admin
+    error CannotRemoveDeployer();
+
     /*//////////////////////////////////////////////////////////////
                             STATE VARIABLES
     //////////////////////////////////////////////////////////////*/
@@ -71,6 +83,15 @@ contract VaultFactory is Ownable {
 
     /// @dev Total number of vaults created
     uint256 private totalVaults;
+
+    /// @dev Address of the initial deployer/admin
+    address public deployerAdmin;
+
+    /// @dev Mapping to track admin status
+    mapping(address => bool) private admins;
+
+    /// @dev Total number of admins
+    uint256 public adminCount;
 
     /*//////////////////////////////////////////////////////////////
                                 EVENTS
@@ -109,6 +130,20 @@ contract VaultFactory is Ownable {
         uint256 timestamp
     );
 
+    /**
+     * @dev Emitted when a new admin is added
+     * @param admin The address of the new admin
+     * @param addedBy The address of the admin who added the new admin
+     */
+    event AdminAdded(address indexed admin, address indexed addedBy);
+
+    /**
+     * @dev Emitted when an admin is removed
+     * @param admin The address of the removed admin
+     * @param removedBy The address of the admin who removed the admin
+     */
+    event AdminRemoved(address indexed admin, address indexed removedBy);
+
     /*//////////////////////////////////////////////////////////////
                             CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
@@ -117,7 +152,24 @@ contract VaultFactory is Ownable {
      * @dev Constructor to initialize the factory
      * @param initialOwner The address of the initial owner
      */
-    constructor(address initialOwner) Ownable(initialOwner) {}
+    constructor(address initialOwner) Ownable(initialOwner) {
+        deployerAdmin = initialOwner;
+        admins[initialOwner] = true;
+        adminCount = 1;
+        emit AdminAdded(initialOwner, address(0));
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                            MODIFIERS
+    //////////////////////////////////////////////////////////////*/
+
+    /**
+     * @dev Modifier to restrict access to admins only
+     */
+    modifier onlyAdmin() {
+        if (!admins[msg.sender]) revert NotAdmin();
+        _;
+    }
 
     /*//////////////////////////////////////////////////////////////
                         USER REGISTRATION
@@ -160,7 +212,12 @@ contract VaultFactory is Ownable {
      * @param asset The asset address
      * @param feed The Chainlink price feed address
      */
-    function setAssetPriceFeed(address asset, address feed) external onlyOwner {
+    /**
+     * @dev Set the price feed for a supported asset
+     * @param asset The asset address
+     * @param feed The Chainlink price feed address
+     */
+    function setAssetPriceFeed(address asset, address feed) external onlyAdmin {
         require(asset != address(0), "VaultFactory: asset is zero address");
         require(feed != address(0), "VaultFactory: feed is zero address");
         
@@ -338,5 +395,52 @@ contract VaultFactory is Ownable {
      */
     function getVaultCreationTime(address vault) external view returns (uint256) {
         return vaultCreatedAt[vault];
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                            ADMIN MANAGEMENT
+    //////////////////////////////////////////////////////////////*/
+
+    /**
+     * @dev Add a new admin
+     * @param newAdmin The address of the new admin
+     */
+    function addAdmin(address newAdmin) external onlyAdmin {
+        if (newAdmin == address(0)) revert("Invalid address");
+        if (admins[newAdmin]) revert AdminAlreadyExists();
+
+        admins[newAdmin] = true;
+        adminCount++;
+        emit AdminAdded(newAdmin, msg.sender);
+    }
+
+    /**
+     * @dev Remove an existing admin
+     * @param admin The address of the admin to remove
+     */
+    function removeAdmin(address admin) external onlyAdmin {
+        if (!admins[admin]) revert AdminDoesNotExist();
+        if (admin == deployerAdmin) revert CannotRemoveDeployer();
+
+        admins[admin] = false;
+        adminCount--;
+        emit AdminRemoved(admin, msg.sender);
+    }
+
+    /**
+     * @dev Check if an address is an admin
+     * @param account The address to check
+     * @return bool True if the address is an admin
+     */
+    function isAdmin(address account) external view returns (bool) {
+        return admins[account];
+    }
+
+    /**
+     * @dev Get the total number of admins
+     * @return The number of admins
+     */
+    function getAdminCount() external view returns (uint256) {
+        return adminCount;
     }
 }

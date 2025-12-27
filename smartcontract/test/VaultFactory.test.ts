@@ -410,4 +410,101 @@ describe("VaultFactory - User Registration", function () {
       expect(vaults[0]).to.not.equal(vaults[1]);
     });
   });
+
+  describe("Admin System", function () {
+    let mockAsset: MockERC20;
+    let mockPriceFeed: ChainlinkMock;
+
+    beforeEach(async function () {
+      // Deploy Mock Token
+      const MockERC20Factory = await ethers.getContractFactory("MockERC20");
+      mockAsset = (await MockERC20Factory.deploy("Mock Token", "MTK", 18)) as unknown as MockERC20;
+      await mockAsset.waitForDeployment();
+
+      // Deploy Mock Price Feed
+      const ChainlinkMockFactory = await ethers.getContractFactory("ChainlinkMock");
+      mockPriceFeed = (await ChainlinkMockFactory.deploy(200000000000, 8)) as unknown as ChainlinkMock; // $2000
+      await mockPriceFeed.waitForDeployment();
+    });
+
+    it("Should set deployer as initial admin", async function () {
+      expect(await factory.deployerAdmin()).to.equal(owner.address);
+      expect(await factory.isAdmin(owner.address)).to.be.true;
+      expect(await factory.getAdminCount()).to.equal(1);
+    });
+
+    it("Should allow admin to add new admin", async function () {
+      await expect(factory.connect(owner).addAdmin(user1.address))
+        .to.emit(factory, "AdminAdded")
+        .withArgs(user1.address, owner.address);
+
+      expect(await factory.isAdmin(user1.address)).to.be.true;
+      expect(await factory.getAdminCount()).to.equal(2);
+    });
+
+    it("Should allow admin to remove admin", async function () {
+      await factory.connect(owner).addAdmin(user1.address);
+      
+      await expect(factory.connect(owner).removeAdmin(user1.address))
+        .to.emit(factory, "AdminRemoved")
+        .withArgs(user1.address, owner.address);
+
+      expect(await factory.isAdmin(user1.address)).to.be.false;
+      expect(await factory.getAdminCount()).to.equal(1);
+    });
+
+    it("Should prevent duplicate admin addition", async function () {
+      await factory.connect(owner).addAdmin(user1.address);
+      
+      await expect(
+        factory.connect(owner).addAdmin(user1.address)
+      ).to.be.revertedWithCustomError(factory, "AdminAlreadyExists");
+    });
+
+    it("Should prevent removing non-existent admin", async function () {
+      await expect(
+        factory.connect(owner).removeAdmin(user1.address)
+      ).to.be.revertedWithCustomError(factory, "AdminDoesNotExist");
+    });
+
+    it("Should prevent removing deployer admin", async function () {
+      await expect(
+        factory.connect(owner).removeAdmin(owner.address)
+      ).to.be.revertedWithCustomError(factory, "CannotRemoveDeployer");
+    });
+
+    it("Should restrict admin functions to admins only", async function () {
+      await expect(
+        factory.connect(user1).addAdmin(user2.address)
+      ).to.be.revertedWithCustomError(factory, "NotAdmin");
+
+      await expect(
+        factory.connect(user1).removeAdmin(owner.address)
+      ).to.be.revertedWithCustomError(factory, "NotAdmin");
+    });
+
+    it("Should allow new admin to manage other admins", async function () {
+      await factory.connect(owner).addAdmin(user1.address);
+      
+      await expect(factory.connect(user1).addAdmin(user2.address))
+        .to.emit(factory, "AdminAdded")
+        .withArgs(user2.address, user1.address);
+        
+      expect(await factory.isAdmin(user2.address)).to.be.true;
+    });
+
+    it("Should restrict setAssetPriceFeed to admins", async function () {
+      const mockAssetAddr = await mockAsset.getAddress();
+      const mockFeedAddr = await mockPriceFeed.getAddress();
+
+      await expect(
+        factory.connect(user1).setAssetPriceFeed(mockAssetAddr, mockFeedAddr)
+      ).to.be.revertedWithCustomError(factory, "NotAdmin");
+
+      await factory.connect(owner).addAdmin(user1.address);
+      
+      await expect(factory.connect(user1).setAssetPriceFeed(mockAssetAddr, mockFeedAddr))
+        .to.emit(factory, "PriceFeedUpdated");
+    });
+  });
 });
