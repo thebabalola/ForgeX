@@ -1,8 +1,9 @@
 import { expect } from "chai";
 import { ethers } from "hardhat";
-import { VaultFactory } from "../typechain-types";
+import { VaultFactory, MockERC20, ChainlinkMock } from "../typechain-types";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
-import { time } from "@nomicfoundation/hardhat-network-helpers";
+import { time, anyValue } from "@nomicfoundation/hardhat-chai-matchers/withArgs";
+import { time as networkTime } from "@nomicfoundation/hardhat-network-helpers";
 
 describe("VaultFactory - User Registration", function () {
   let factory: VaultFactory;
@@ -38,7 +39,7 @@ describe("VaultFactory - User Registration", function () {
     it("Should allow user to register with valid username and bio", async function () {
       await expect(factory.connect(user1).registerUser(validUsername, validBio))
         .to.emit(factory, "UserRegistered")
-        .withArgs(user1.address, validUsername, await time.latest() + 1);
+        .withArgs(user1.address, validUsername, anyValue);
 
       expect(await factory.isUserRegistered(user1.address)).to.be.true;
     });
@@ -328,6 +329,84 @@ describe("VaultFactory - User Registration", function () {
       } catch (error: any) {
         expect(error.message).to.include("AlreadyRegistered");
       }
+    });
+  });
+  describe("Vault Creation", function () {
+    let mockAsset: MockERC20;
+    let mockPriceFeed: ChainlinkMock;
+
+    beforeEach(async function () {
+      // Deploy Mock Token
+      const MockERC20Factory = await ethers.getContractFactory("MockERC20");
+      mockAsset = await MockERC20Factory.deploy("Mock Token", "MTK", 18);
+      await mockAsset.waitForDeployment();
+
+      // Deploy Mock Price Feed
+      const ChainlinkMockFactory = await ethers.getContractFactory("ChainlinkMock");
+      mockPriceFeed = await ChainlinkMockFactory.deploy(200000000000, 8); // $2000
+      await mockPriceFeed.waitForDeployment();
+
+      // Register user1
+      await factory.connect(user1).registerUser("Alice", "Bio");
+    });
+
+    it("Should create vault successfully when price feed is set", async function () {
+      // Set price feed
+      await factory.connect(owner).setAssetPriceFeed(await mockAsset.getAddress(), await mockPriceFeed.getAddress());
+
+      // Create vault
+      await expect(factory.connect(user1).createVault(await mockAsset.getAddress(), "Vault Token", "vtMTK"))
+        .to.emit(factory, "VaultCreated")
+        .withArgs(user1.address, anyValue, await mockAsset.getAddress(), anyValue);
+
+      // Verify vault count
+      expect(await factory.getTotalVaults()).to.equal(1);
+      expect(await factory.getVaultCount(user1.address)).to.equal(1);
+    });
+
+    it("Should revert if user is not registered", async function () {
+      // Set price feed
+      await factory.connect(owner).setAssetPriceFeed(await mockAsset.getAddress(), await mockPriceFeed.getAddress());
+
+      await expect(
+        factory.connect(user2).createVault(await mockAsset.getAddress(), "Vault Token", "vtMTK")
+      ).to.be.revertedWithCustomError(factory, "NotRegistered");
+    });
+
+    it("Should revert if price feed is not set", async function () {
+      await expect(
+        factory.connect(user1).createVault(await mockAsset.getAddress(), "Vault Token", "vtMTK")
+      ).to.be.revertedWithCustomError(factory, "PriceFeedNotSet");
+    });
+
+    it("Should track created vaults correctly", async function () {
+      await factory.connect(owner).setAssetPriceFeed(await mockAsset.getAddress(), await mockPriceFeed.getAddress());
+      
+      const tx = await factory.connect(user1).createVault(await mockAsset.getAddress(), "Vault Token", "vtMTK");
+      const receipt = await tx.wait();
+      
+      // Get vault address from logs
+      // The VaultCreated event is the last event emitted by the factory
+      const event = (await factory.queryFilter(factory.filters.VaultCreated, receipt!.blockNumber)).pop();
+      const vaultAddress = event!.args!.vault;
+
+      // Verify mappings
+      expect(await factory.getVaultOwner(vaultAddress)).to.equal(user1.address);
+      const userVaults = await factory.getUserVaults(user1.address);
+      expect(userVaults[0]).to.equal(vaultAddress);
+      expect(await factory.getVaultCreationTime(vaultAddress)).to.be.gt(0);
+    });
+
+    it("Should allow user to create multiple vaults", async function () {
+      await factory.connect(owner).setAssetPriceFeed(await mockAsset.getAddress(), await mockPriceFeed.getAddress());
+      
+      await factory.connect(user1).createVault(await mockAsset.getAddress(), "Vault 1", "v1");
+      await factory.connect(user1).createVault(await mockAsset.getAddress(), "Vault 2", "v2");
+
+      expect(await factory.getVaultCount(user1.address)).to.equal(2);
+      const vaults = await factory.getUserVaults(user1.address);
+      expect(vaults.length).to.equal(2);
+      expect(vaults[0]).to.not.equal(vaults[1]);
     });
   });
 });

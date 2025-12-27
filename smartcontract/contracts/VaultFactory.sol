@@ -2,6 +2,7 @@
 pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "./UserVault.sol";
 
 /**
  * @title VaultFactory
@@ -28,6 +29,12 @@ contract VaultFactory is Ownable {
     /// @dev Thrown when username is empty
     error EmptyUsername();
 
+    /// @dev Thrown when trying to create vault for asset without price feed
+    error PriceFeedNotSet();
+
+    /// @dev Thrown when vault deployment fails
+    error VaultCreationFailed();
+
     /*//////////////////////////////////////////////////////////////
                             STATE VARIABLES
     //////////////////////////////////////////////////////////////*/
@@ -53,6 +60,18 @@ contract VaultFactory is Ownable {
     /// @dev Mapping to store price feeds for assets
     mapping(address => address) public assetPriceFeeds;
 
+    /// @dev Mapping to track vaults created by each user
+    mapping(address => address[]) private userVaults;
+
+    /// @dev Mapping to track vault owners
+    mapping(address => address) private vaultOwners;
+
+    /// @dev Mapping to track vault creation timestamps
+    mapping(address => uint256) private vaultCreatedAt;
+
+    /// @dev Total number of vaults created
+    uint256 private totalVaults;
+
     /*//////////////////////////////////////////////////////////////
                                 EVENTS
     //////////////////////////////////////////////////////////////*/
@@ -75,6 +94,20 @@ contract VaultFactory is Ownable {
      * @param feed The price feed address
      */
     event PriceFeedUpdated(address indexed asset, address indexed feed);
+
+    /**
+     * @dev Emitted when a vault is created
+     * @param owner The address of the vault owner
+     * @param vault The address of the created vault
+     * @param asset The address of the vault's underlying asset
+     * @param timestamp The block timestamp of vault creation
+     */
+    event VaultCreated(
+        address indexed owner,
+        address indexed vault,
+        address indexed asset,
+        uint256 timestamp
+    );
 
     /*//////////////////////////////////////////////////////////////
                             CONSTRUCTOR
@@ -133,6 +166,62 @@ contract VaultFactory is Ownable {
         
         assetPriceFeeds[asset] = feed;
         emit PriceFeedUpdated(asset, feed);
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                         VAULT CREATION
+    //////////////////////////////////////////////////////////////*/
+
+    /**
+     * @dev Create a new vault for a registered user
+     * @param asset The address of the underlying asset token
+     * @param name The name of the vault share token
+     * @param symbol The symbol of the vault share token
+     * @return vault The address of the created vault
+     * @notice User must be registered before creating a vault
+     * @notice Price feed must be set for the asset
+     */
+    function createVault(
+        address asset,
+        string calldata name,
+        string calldata symbol
+    ) external returns (address vault) {
+        // Check user is registered
+        if (!registeredUsers[msg.sender]) revert NotRegistered();
+
+        // Check price feed is set for this asset
+        address priceFeed = assetPriceFeeds[asset];
+        if (priceFeed == address(0)) revert PriceFeedNotSet();
+
+        // Deploy new UserVault contract
+        vault = address(
+            new UserVault(
+                asset,
+                msg.sender,
+                address(this),
+                name,
+                symbol,
+                priceFeed
+            )
+        );
+
+        // Verify deployment succeeded
+        if (vault == address(0)) revert VaultCreationFailed();
+
+        // Track vault in user's vault list
+        userVaults[msg.sender].push(vault);
+
+        // Record vault owner
+        vaultOwners[vault] = msg.sender;
+
+        // Record creation timestamp
+        vaultCreatedAt[vault] = block.timestamp;
+
+        // Increment total vaults counter
+        totalVaults++;
+
+        // Emit event
+        emit VaultCreated(msg.sender, vault, asset, block.timestamp);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -205,5 +294,49 @@ contract VaultFactory is Ownable {
     function getRegistrationTimestamp(address user) external view returns (uint256) {
         if (!registeredUsers[user]) revert NotRegistered();
         return userRegistrationTimestamps[user];
+    }
+
+    /**
+     * @dev Get all vaults created by a user
+     * @param user The address of the user
+     * @return An array of vault addresses
+     */
+    function getUserVaults(address user) external view returns (address[] memory) {
+        return userVaults[user];
+    }
+
+    /**
+     * @dev Get the owner of a vault
+     * @param vault The address of the vault
+     * @return The address of the vault owner
+     */
+    function getVaultOwner(address vault) external view returns (address) {
+        return vaultOwners[vault];
+    }
+
+    /**
+     * @dev Get the total number of vaults created
+     * @return The total vault count
+     */
+    function getTotalVaults() external view returns (uint256) {
+        return totalVaults;
+    }
+
+    /**
+     * @dev Get the number of vaults created by a user
+     * @param user The address of the user
+     * @return The number of vaults
+     */
+    function getVaultCount(address user) external view returns (uint256) {
+        return userVaults[user].length;
+    }
+
+    /**
+     * @dev Get the creation timestamp of a vault
+     * @param vault The address of the vault
+     * @return The timestamp when vault was created
+     */
+    function getVaultCreationTime(address vault) external view returns (uint256) {
+        return vaultCreatedAt[vault];
     }
 }
