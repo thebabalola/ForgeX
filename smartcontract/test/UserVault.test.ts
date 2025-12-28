@@ -482,4 +482,111 @@ describe("UserVault", function () {
       expect(await vault.getSharePriceUSD()).to.equal(expectedValue);
     });
   });
+  describe("Protocol Allocation Management", function () {
+    const depositAmount = ethers.parseEther("1000");
+
+    beforeEach(async function () {
+      await asset.connect(user1).approve(await vault.getAddress(), depositAmount);
+      await vault.connect(user1).deposit(depositAmount, user1.address);
+    });
+
+    it("Should allow owner to set protocol allocation", async function () {
+      await expect(vault.connect(owner).setProtocolAllocation("Aave", ethers.parseEther("500")))
+        .to.emit(vault, "ProtocolAllocationChanged")
+        .withArgs("Aave", 0, ethers.parseEther("500"));
+
+      expect(await vault.getProtocolAllocation("Aave")).to.equal(ethers.parseEther("500"));
+    });
+
+    it("Should prevent non-owner from setting allocation", async function () {
+      await expect(
+        vault.connect(user1).setProtocolAllocation("Aave", ethers.parseEther("500"))
+      ).to.be.revertedWithCustomError(vault, "OwnableUnauthorizedAccount");
+    });
+
+    it("Should revert on empty protocol name", async function () {
+      await expect(
+        vault.connect(owner).setProtocolAllocation("", ethers.parseEther("500"))
+      ).to.be.revertedWithCustomError(vault, "InvalidProtocolName");
+    });
+
+    it("Should revert when allocation exceeds balance", async function () {
+      await expect(
+        vault.connect(owner).setProtocolAllocation("Aave", ethers.parseEther("2000"))
+      ).to.be.revertedWithCustomError(vault, "AllocationExceedsBalance");
+    });
+
+    it("Should allow multiple protocol allocations", async function () {
+      await vault.connect(owner).setProtocolAllocation("Aave", ethers.parseEther("300"));
+      await vault.connect(owner).setProtocolAllocation("Compound", ethers.parseEther("400"));
+      await vault.connect(owner).setProtocolAllocation("Uniswap", ethers.parseEther("200"));
+
+      expect(await vault.getProtocolAllocation("Aave")).to.equal(ethers.parseEther("300"));
+      expect(await vault.getProtocolAllocation("Compound")).to.equal(ethers.parseEther("400"));
+      expect(await vault.getProtocolAllocation("Uniswap")).to.equal(ethers.parseEther("200"));
+    });
+
+    it("Should calculate total allocated correctly", async function () {
+      await vault.connect(owner).setProtocolAllocation("Aave", ethers.parseEther("300"));
+      await vault.connect(owner).setProtocolAllocation("Compound", ethers.parseEther("400"));
+
+      expect(await vault.getTotalAllocated()).to.equal(ethers.parseEther("700"));
+    });
+
+    it("Should prevent total allocations from exceeding balance", async function () {
+      await vault.connect(owner).setProtocolAllocation("Aave", ethers.parseEther("600"));
+      
+      await expect(
+        vault.connect(owner).setProtocolAllocation("Compound", ethers.parseEther("500"))
+      ).to.be.revertedWithCustomError(vault, "AllocationExceedsBalance");
+    });
+
+    it("Should allow updating existing allocation", async function () {
+      await vault.connect(owner).setProtocolAllocation("Aave", ethers.parseEther("500"));
+      
+      await expect(vault.connect(owner).setProtocolAllocation("Aave", ethers.parseEther("300")))
+        .to.emit(vault, "ProtocolAllocationChanged")
+        .withArgs("Aave", ethers.parseEther("500"), ethers.parseEther("300"));
+
+      expect(await vault.getProtocolAllocation("Aave")).to.equal(ethers.parseEther("300"));
+    });
+
+    it("Should allow setting allocation to zero", async function () {
+      await vault.connect(owner).setProtocolAllocation("Aave", ethers.parseEther("500"));
+      
+      await expect(vault.connect(owner).setProtocolAllocation("Aave", 0))
+        .to.emit(vault, "ProtocolAllocationChanged")
+        .withArgs("Aave", ethers.parseEther("500"), 0);
+
+      expect(await vault.getProtocolAllocation("Aave")).to.equal(0);
+    });
+
+    it("Should return all protocol allocations", async function () {
+      await vault.connect(owner).setProtocolAllocation("Aave", ethers.parseEther("300"));
+      await vault.connect(owner).setProtocolAllocation("Compound", ethers.parseEther("400"));
+
+      const [protocols, amounts] = await vault.getAllProtocolAllocations();
+      
+      expect(protocols.length).to.equal(2);
+      expect(amounts.length).to.equal(2);
+      expect(protocols).to.include("Aave");
+      expect(protocols).to.include("Compound");
+    });
+
+    it("Should handle allocation removal from array", async function () {
+      await vault.connect(owner).setProtocolAllocation("Aave", ethers.parseEther("300"));
+      await vault.connect(owner).setProtocolAllocation("Compound", ethers.parseEther("400"));
+      
+      // Set Aave to 0 (should remove from array)
+      await vault.connect(owner).setProtocolAllocation("Aave", 0);
+      
+      const [protocols, amounts] = await vault.getAllProtocolAllocations();
+      expect(protocols.length).to.equal(1);
+      expect(protocols[0]).to.equal("Compound");
+    });
+
+    it("Should return zero for unallocated protocol", async function () {
+      expect(await vault.getProtocolAllocation("NonExistent")).to.equal(0);
+    });
+  });
 });
