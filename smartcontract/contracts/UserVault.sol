@@ -32,6 +32,37 @@ contract UserVault is ERC20, IERC4626, Ownable {
     /// @dev Reference to the Chainlink Price Feed
     AggregatorV3Interface private immutable _priceFeed;
 
+    /// @dev Mapping of protocol names to allocated amounts
+    mapping(string => uint256) private protocolAllocations;
+
+    /// @dev Array of protocol names for iteration
+    string[] private protocolNames;
+
+    /*//////////////////////////////////////////////////////////////
+                            CUSTOM ERRORS
+    //////////////////////////////////////////////////////////////*/
+
+    /// @dev Thrown when protocol name is empty
+    error InvalidProtocolName();
+
+    /// @dev Thrown when total allocations exceed vault balance
+    error AllocationExceedsBalance();
+
+    /// @dev Thrown when amount is invalid
+    error InvalidAmount();
+
+    /*//////////////////////////////////////////////////////////////
+                                EVENTS
+    //////////////////////////////////////////////////////////////*/
+
+    /**
+     * @dev Emitted when protocol allocation is changed
+     * @param protocol The name of the protocol
+     * @param oldAmount The previous allocation amount
+     * @param newAmount The new allocation amount
+     */
+    event ProtocolAllocationChanged(string indexed protocol, uint256 oldAmount, uint256 newAmount);
+
     /*//////////////////////////////////////////////////////////////
                             CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
@@ -363,6 +394,94 @@ contract UserVault is ERC20, IERC4626, Ownable {
             // Calculate proportional assets
             uint256 totalAssets_ = totalAssets();
             assets = shares.mulDiv(totalAssets_, supply, rounding);
+        }
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                    PROTOCOL ALLOCATION MANAGEMENT
+    //////////////////////////////////////////////////////////////*/
+
+    /**
+     * @dev Set allocation for a specific protocol
+     * @param protocol The name of the protocol
+     * @param amount The amount to allocate
+     */
+    function setProtocolAllocation(string memory protocol, uint256 amount) external onlyOwner {
+        if (bytes(protocol).length == 0) revert InvalidProtocolName();
+        
+        uint256 oldAmount = protocolAllocations[protocol];
+        
+        // Calculate new total allocation
+        uint256 currentTotal = getTotalAllocated();
+        uint256 newTotal = currentTotal - oldAmount + amount;
+        
+        // Validate total allocations don't exceed total assets
+        if (newTotal > totalAssets()) revert AllocationExceedsBalance();
+        
+        // Update allocation
+        protocolAllocations[protocol] = amount;
+        
+        // Add protocol to array if it's new and amount > 0
+        if (oldAmount == 0 && amount > 0) {
+            protocolNames.push(protocol);
+        }
+        
+        // Remove protocol from array if amount is now 0
+        if (amount == 0 && oldAmount > 0) {
+            _removeProtocolName(protocol);
+        }
+        
+        emit ProtocolAllocationChanged(protocol, oldAmount, amount);
+    }
+
+    /**
+     * @dev Get allocation for a specific protocol
+     * @param protocol The name of the protocol
+     * @return The allocated amount
+     */
+    function getProtocolAllocation(string memory protocol) external view returns (uint256) {
+        return protocolAllocations[protocol];
+    }
+
+    /**
+     * @dev Get total allocated amount across all protocols
+     * @return The total allocated amount
+     */
+    function getTotalAllocated() public view returns (uint256) {
+        uint256 total = 0;
+        for (uint256 i = 0; i < protocolNames.length; i++) {
+            total += protocolAllocations[protocolNames[i]];
+        }
+        return total;
+    }
+
+    /**
+     * @dev Get all protocol allocations
+     * @return protocols Array of protocol names
+     * @return amounts Array of corresponding allocation amounts
+     */
+    function getAllProtocolAllocations() external view returns (string[] memory protocols, uint256[] memory amounts) {
+        protocols = new string[](protocolNames.length);
+        amounts = new uint256[](protocolNames.length);
+        
+        for (uint256 i = 0; i < protocolNames.length; i++) {
+            protocols[i] = protocolNames[i];
+            amounts[i] = protocolAllocations[protocolNames[i]];
+        }
+    }
+
+    /**
+     * @dev Internal function to remove a protocol name from the array
+     * @param protocol The protocol name to remove
+     */
+    function _removeProtocolName(string memory protocol) private {
+        for (uint256 i = 0; i < protocolNames.length; i++) {
+            if (keccak256(bytes(protocolNames[i])) == keccak256(bytes(protocol))) {
+                // Move the last element to this position and pop
+                protocolNames[i] = protocolNames[protocolNames.length - 1];
+                protocolNames.pop();
+                break;
+            }
         }
     }
 }
