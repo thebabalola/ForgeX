@@ -388,7 +388,7 @@ Implement protocol address management in VaultFactory. Admins can set addresses 
 
 ### Issue #8: UserVault Contract — Protocol Allocation Management
 
-**Status:** ❌ PENDING  
+**Status:** ✅ COMPLETED  
 
 **Labels:** `smart-contracts`, `feature`, `vault`, `defi`  
 
@@ -400,24 +400,29 @@ Implement protocol allocation management in UserVault. Owners can configure how 
 
 **Acceptance Criteria:**
 
-- [ ] Allocation management:
-  - [ ] `setProtocolAllocation(string protocol, uint256 amount)` - Set allocation (owner only)
-  - [ ] `getProtocolAllocation(string protocol) returns (uint256)` - Get allocation
-- [ ] Storage structure:
-  - [ ] `mapping(string => uint256) protocolAllocations` - Protocol name to amount
-- [ ] Validation:
-  - [ ] Total allocations cannot exceed total assets
-  - [ ] Protocol name validation
-  - [ ] Amount validation (non-negative)
-- [ ] Event: `ProtocolAllocationChanged(string indexed protocol, uint256 oldAmount, uint256 newAmount)`
-- [ ] View function to get all allocations
-- [ ] Owner-only access control
+- [x] Allocation management:
+  - [x] `setProtocolAllocation(string protocol, uint256 amount)` - Set allocation (owner only)
+  - [x] `getProtocolAllocation(string protocol) returns (uint256)` - Get allocation
+- [x] Storage structure:
+  - [x] `mapping(string => uint256) protocolAllocations` - Protocol name to amount
+- [x] Validation:
+  - [x] Total allocations cannot exceed total assets
+  - [x] Protocol name validation
+  - [x] Amount validation (non-negative)
+- [x] Event: `ProtocolAllocationChanged(string indexed protocol, uint256 oldAmount, uint256 newAmount)`
+- [x] View function to get all allocations
+- [x] Owner-only access control
 
 **Implementation Notes:**
 
-- Consider storing allocations as percentages vs absolute amounts
-- Add function to get total allocated amount
-- May need to track deployed amounts separately from allocations
+- Implemented storage mapping for protocol allocations
+- Added array tracking for protocol names to enable iteration
+- All setter functions protected with `onlyOwner` modifier
+- Added custom errors for validation (`InvalidProtocolName`, `AllocationExceedsBalance`)
+- Implemented `getTotalAllocated()` and `getAllProtocolAllocations()` view functions
+- Verified with comprehensive test suite (13 new tests)
+
+**Completed:** All acceptance criteria met. Protocol allocation management fully implemented and tested.
 
 ---
 
