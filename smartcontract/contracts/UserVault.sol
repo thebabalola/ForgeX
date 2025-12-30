@@ -134,7 +134,9 @@ contract UserVault is ERC20, IERC4626, Ownable {
      * @inheritdoc IERC4626
      */
     function totalAssets() public view override returns (uint256) {
-        return _asset.balanceOf(address(this));
+        // Return vault balance + estimated Compound balance
+        // Note: We use compoundDeposited as an estimate since balanceOfUnderlying() is not view
+        return _asset.balanceOf(address(this)) + compoundDeposited;
     }
 
     /**
