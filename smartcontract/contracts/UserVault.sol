@@ -624,6 +624,38 @@ contract UserVault is ERC20, IERC4626, Ownable {
         ICToken cToken = ICToken(compoundAddress);
         return cToken.balanceOfUnderlying(address(this));
     }
+
+    /*//////////////////////////////////////////////////////////////
+                        PAUSE/UNPAUSE FUNCTIONALITY
+    //////////////////////////////////////////////////////////////*/
+
+    /**
+     * @notice Pause the vault to prevent all critical operations
+     * @dev Only the vault owner can pause. Emits VaultPaused event
+     */
+    function pause() external onlyOwner {
+        if (_paused) revert VaultPaused();
+        _paused = true;
+        emit VaultPaused(address(this), msg.sender);
+    }
+
+    /**
+     * @notice Unpause the vault to resume normal operations
+     * @dev Only the vault owner can unpause. Emits VaultUnpaused event
+     */
+    function unpause() external onlyOwner {
+        if (!_paused) revert VaultPaused();
+        _paused = false;
+        emit VaultUnpaused(address(this), msg.sender);
+    }
+
+    /**
+     * @notice Check if the vault is currently paused
+     * @return bool True if paused, false otherwise
+     */
+    function isPaused() external view returns (bool) {
+        return _paused;
+    }
 }
 
 /**
