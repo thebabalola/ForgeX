@@ -140,6 +140,18 @@ contract UserVault is ERC20, IERC4626, Ownable {
     }
 
     /*//////////////////////////////////////////////////////////////
+                                MODIFIERS
+    //////////////////////////////////////////////////////////////*/
+
+    /**
+     * @dev Modifier to make a function callable only when the vault is not paused
+     */
+    modifier whenNotPaused() {
+        if (_paused) revert VaultPaused();
+        _;
+    }
+
+    /*//////////////////////////////////////////////////////////////
                         ASSET INFORMATION
     //////////////////////////////////////////////////////////////*/
 
