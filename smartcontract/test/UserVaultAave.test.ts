@@ -60,9 +60,7 @@ describe("UserVault - Aave Integration", function () {
 
     // Create vault via factory
     await vaultFactory.connect(user1).registerUser("testuser", "test bio");
-    await vaultFactory
-      .connect(user1)
-      .createVault(await asset.getAddress());
+    await vaultFactory.connect(user1).createVault(await asset.getAddress());
 
     // Extract vault address from event
     const vaultAddress = await vaultFactory.getUserVaults(user1.address);

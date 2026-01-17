@@ -6,9 +6,9 @@ This file contains all GitHub issues for the ForgeX smart contracts. Each issue 
 
 ### Issue #1: Project Setup & Hardhat Configuration
 
-**Status:** ✅ COMPLETED  
+**Status:** ✅ COMPLETED
 
-**Labels:** `smart-contracts`, `infrastructure`, `setup`  
+**Labels:** `smart-contracts`, `infrastructure`, `setup`
 
 **Priority:** HIGH
 
@@ -47,9 +47,9 @@ Set up Hardhat project with proper configuration for Base Mainnet. Configure com
 
 ### Issue #2: ERC-4626 Interface Implementation
 
-**Status:** ✅ COMPLETED  
+**Status:** ✅ COMPLETED
 
-**Labels:** `smart-contracts`, `standard`, `erc4626`  
+**Labels:** `smart-contracts`, `standard`, `erc4626`
 
 **Priority:** HIGH
 
@@ -94,9 +94,9 @@ Implement the ERC-4626 interface (`IERC4626.sol`) in the contracts directory. Th
 
 ### Issue #3: UserVault Contract — Core ERC-4626 Implementation
 
-**Status:** ✅ COMPLETED  
+**Status:** ✅ COMPLETED
 
-**Labels:** `smart-contracts`, `feature`, `erc4626`, `vault`  
+**Labels:** `smart-contracts`, `feature`, `erc4626`, `vault`
 
 **Priority:** HIGH
 
@@ -141,9 +141,9 @@ Implement the core UserVault contract that extends ERC-4626 standard. This contr
 
 ### Issue #4: VaultFactory Contract — User Registration
 
-**Status:** ✅ COMPLETED  
+**Status:** ✅ COMPLETED
 
-**Labels:** `smart-contracts`, `feature`, `factory`  
+**Labels:** `smart-contracts`, `feature`, `factory`
 
 **Priority:** HIGH
 
@@ -186,9 +186,9 @@ Implement user registration functionality in VaultFactory contract. Users must r
 
 ### Issue #4.5: Chainlink Price Feeds Integration
 
-**Status:** ✅ COMPLETED  
+**Status:** ✅ COMPLETED
 
-**Labels:** `smart-contracts`, `feature`, `chainlink`, `price-feeds`  
+**Labels:** `smart-contracts`, `feature`, `chainlink`, `price-feeds`
 
 **Priority:** MEDIUM
 
@@ -237,10 +237,12 @@ Integrate Chainlink Price Feeds into UserVault contract to provide real-time USD
   - Add more as needed
 
 **Base Mainnet Price Feed Addresses:**
+
 - ETH/USD: `0x71041dddad3595F745215C98a901844ED99Db595`
 - USDC/USD: `0x7e860098F58bBFC8648a4311b374B1D669a2bc6B`
 
 **Example Implementation:**
+
 ```solidity
 function getTotalValueUSD() public view returns (uint256) {
     (, int256 price,,,) = priceFeed.latestRoundData();
@@ -253,9 +255,9 @@ function getTotalValueUSD() public view returns (uint256) {
 
 ### Issue #5: VaultFactory Contract — Vault Creation
 
-**Status:** ✅ COMPLETED  
+**Status:** ✅ COMPLETED
 
-**Labels:** `smart-contracts`, `feature`, `factory`, `vault`  
+**Labels:** `smart-contracts`, `feature`, `factory`, `vault`
 
 **Priority:** HIGH
 
@@ -298,9 +300,9 @@ Implement vault creation functionality in VaultFactory. Registered users can cre
 
 ### Issue #6: VaultFactory Contract — Admin System
 
-**Status:** ✅ COMPLETED  
+**Status:** ✅ COMPLETED
 
-**Labels:** `smart-contracts`, `feature`, `factory`, `admin`  
+**Labels:** `smart-contracts`, `feature`, `factory`, `admin`
 
 **Priority:** MEDIUM
 
@@ -342,9 +344,9 @@ Implement admin system in VaultFactory for managing protocol addresses and platf
 
 ### Issue #7: VaultFactory Contract — Protocol Address Management
 
-**Status:** ✅ COMPLETED  
+**Status:** ✅ COMPLETED
 
-**Labels:** `smart-contracts`, `feature`, `factory`, `admin`  
+**Labels:** `smart-contracts`, `feature`, `factory`, `admin`
 
 **Priority:** HIGH
 
@@ -388,9 +390,9 @@ Implement protocol address management in VaultFactory. Admins can set addresses 
 
 ### Issue #8: UserVault Contract — Protocol Allocation Management
 
-**Status:** ✅ COMPLETED  
+**Status:** ✅ COMPLETED
 
-**Labels:** `smart-contracts`, `feature`, `vault`, `defi`  
+**Labels:** `smart-contracts`, `feature`, `vault`, `defi`
 
 **Priority:** HIGH
 
@@ -428,9 +430,9 @@ Implement protocol allocation management in UserVault. Owners can configure how 
 
 ### Issue #9: UserVault Contract — Aave Integration
 
-**Status:** ✅ COMPLETED  
+**Status:** ✅ COMPLETED
 
-**Labels:** `smart-contracts`, `feature`, `vault`, `defi`, `aave`  
+**Labels:** `smart-contracts`, `feature`, `vault`, `defi`, `aave`
 
 **Priority:** MEDIUM
 
@@ -482,9 +484,9 @@ Implement Aave protocol integration in UserVault. Allow vault to deploy assets t
 
 ### Issue #10: UserVault Contract — Compound Integration
 
-**Status:** ✅ COMPLETED  
+**Status:** ✅ COMPLETED
 
-**Labels:** `smart-contracts`, `feature`, `vault`, `defi`, `compound`  
+**Labels:** `smart-contracts`, `feature`, `vault`, `defi`, `compound`
 
 **Priority:** MEDIUM
 
@@ -528,9 +530,9 @@ Implement Compound protocol integration in UserVault. Allow vault to deploy asse
 
 ### Issue #11: UserVault Contract — Pause/Unpause Functionality
 
-**Status:** ✅ COMPLETED  
+**Status:** ✅ COMPLETED
 
-**Labels:** `smart-contracts`, `feature`, `vault`, `security`  
+**Labels:** `smart-contracts`, `feature`, `vault`, `security`
 
 **Priority:** MEDIUM
 
@@ -570,9 +572,9 @@ Implement pause/unpause functionality in UserVault for emergency stops. Only own
 
 ### Issue #12: Comprehensive Test Suite — VaultFactory
 
-**Status:** ✅ COMPLETED  
+**Status:** ✅ COMPLETED
 
-**Labels:** `smart-contracts`, `testing`, `factory`  
+**Labels:** `smart-contracts`, `testing`, `factory`
 
 **Priority:** HIGH
 
@@ -634,9 +636,9 @@ Write comprehensive test suite for VaultFactory contract covering all functions,
 
 ### Issue #13: Comprehensive Test Suite — UserVault
 
-**Status:** ❌ PENDING  
+**Status:** ❌ PENDING
 
-**Labels:** `smart-contracts`, `testing`, `vault`, `erc4626`  
+**Labels:** `smart-contracts`, `testing`, `vault`, `erc4626`
 
 **Priority:** HIGH
 
@@ -688,9 +690,9 @@ Write comprehensive test suite for UserVault contract covering ERC-4626 complian
 
 ### Issue #14: Integration Tests
 
-**Status:** ❌ PENDING  
+**Status:** ❌ PENDING
 
-**Labels:** `smart-contracts`, `testing`, `integration`  
+**Labels:** `smart-contracts`, `testing`, `integration`
 
 **Priority:** MEDIUM
 
@@ -729,9 +731,9 @@ Write integration tests covering the full workflow: user registration, vault cre
 
 ### Issue #15: Deployment Scripts
 
-**Status:** ❌ PENDING  
+**Status:** ❌ PENDING
 
-**Labels:** `smart-contracts`, `deployment`, `scripts`  
+**Labels:** `smart-contracts`, `deployment`, `scripts`
 
 **Priority:** HIGH
 
@@ -772,9 +774,9 @@ Create deployment scripts for VaultFactory and initialize it with admin setup. P
 
 ### Issue #16: Gas Optimization
 
-**Status:** ❌ PENDING  
+**Status:** ❌ PENDING
 
-**Labels:** `smart-contracts`, `optimization`, `gas`  
+**Labels:** `smart-contracts`, `optimization`, `gas`
 
 **Priority:** MEDIUM
 
@@ -815,9 +817,9 @@ Optimize contract code for gas efficiency. Use gas reporting tools and implement
 
 ### Issue #17: Security Audit Preparation
 
-**Status:** ❌ PENDING  
+**Status:** ❌ PENDING
 
-**Labels:** `smart-contracts`, `security`, `audit`  
+**Labels:** `smart-contracts`, `security`, `audit`
 
 **Priority:** HIGH
 
@@ -856,9 +858,9 @@ Prepare contracts for security audit. Add documentation, review code, and fix kn
 
 ### Issue #18: Contract Documentation & NatSpec
 
-**Status:** ❌ PENDING  
+**Status:** ❌ PENDING
 
-**Labels:** `smart-contracts`, `documentation`  
+**Labels:** `smart-contracts`, `documentation`
 
 **Priority:** MEDIUM
 
@@ -902,9 +904,9 @@ When creating new issues, use this template:
 ```markdown
 ### Issue #<number>: <Title>
 
-**Status:** ❌ PENDING  
+**Status:** ❌ PENDING
 
-**Labels:** `<label1>`, `<label2>`  
+**Labels:** `<label1>`, `<label2>`
 
 **Priority:** HIGH | MEDIUM | LOW
 
