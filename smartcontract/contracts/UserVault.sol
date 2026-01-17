@@ -8,6 +8,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "./interfaces/IERC4626.sol";
 import "./interfaces/ICToken.sol";
+import "./interfaces/IAaveLendingPool.sol";
 import "@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
 
 /**
@@ -42,6 +43,9 @@ contract UserVault is ERC20, IERC4626, Ownable {
     /// @dev Amount of assets currently deposited in Compound
     uint256 private compoundDeposited;
 
+    /// @dev Amount of assets currently deposited in Aave
+    uint256 private aaveDeposited;
+
     /// @dev Pause state of the vault
     bool private _paused;
 
@@ -63,6 +67,9 @@ contract UserVault is ERC20, IERC4626, Ownable {
 
     /// @dev Thrown when Compound operation fails
     error CompoundOperationFailed();
+
+    /// @dev Thrown when Aave operation fails
+    error AaveOperationFailed();
 
     /// @dev Thrown when insufficient balance for operation
     error InsufficientBalance();
@@ -628,6 +635,78 @@ contract UserVault is ERC20, IERC4626, Ownable {
     }
 
     /*//////////////////////////////////////////////////////////////
+                        AAVE INTEGRATION
+    //////////////////////////////////////////////////////////////*/
+
+    /**
+     * @notice Deploy assets to Aave protocol to earn interest
+     * @dev Only the vault owner can call this function
+     * @param amount The amount of assets to deploy to Aave
+     */
+    function deployToAave(uint256 amount) external onlyOwner whenNotPaused {
+        if (amount == 0) revert InvalidAmount();
+        
+        // Get Aave Lending Pool address from factory
+        address aaveAddress = IVaultFactory(_factory).getAaveAddress();
+        if (aaveAddress == address(0)) revert ProtocolAddressNotSet();
+        
+        // Check vault has sufficient balance
+        uint256 availableBalance = _asset.balanceOf(address(this));
+        if (amount > availableBalance) revert InsufficientBalance();
+        
+        // Approve Aave Lending Pool to spend assets
+        _asset.safeIncreaseAllowance(aaveAddress, amount);
+        
+        // Supply assets to Aave
+        IAaveLendingPool aaveLendingPool = IAaveLendingPool(aaveAddress);
+        aaveLendingPool.supply(address(_asset), amount, address(this), 0);
+        
+        // Update tracking
+        aaveDeposited += amount;
+        
+        // Emit event
+        emit ProtocolDeployed("Aave", amount);
+    }
+
+    /**
+     * @notice Withdraw assets from Aave protocol
+     * @dev Only the vault owner can call this function
+     * @param amount The amount of assets to withdraw from Aave
+     */
+    function withdrawFromAave(uint256 amount) external onlyOwner whenNotPaused {
+        if (amount == 0) revert InvalidAmount();
+        
+        // Get Aave Lending Pool address from factory
+        address aaveAddress = IVaultFactory(_factory).getAaveAddress();
+        if (aaveAddress == address(0)) revert ProtocolAddressNotSet();
+        
+        // Check sufficient balance in Aave
+        if (amount > aaveDeposited) revert InsufficientBalance();
+        
+        // Withdraw assets from Aave
+        IAaveLendingPool aaveLendingPool = IAaveLendingPool(aaveAddress);
+        uint256 withdrawn = aaveLendingPool.withdraw(address(_asset), amount, address(this));
+        
+        // Verify withdrawal was successful
+        if (withdrawn != amount) revert AaveOperationFailed();
+        
+        // Update tracking
+        aaveDeposited -= amount;
+        
+        // Emit event
+        emit ProtocolWithdrawn("Aave", amount);
+    }
+
+    /**
+     * @notice Get the current balance of assets deposited in Aave
+     * @dev This returns the tracked balance of Aave deposits
+     * @return The amount of underlying assets in Aave
+     */
+    function getAaveBalance() public view returns (uint256) {
+        return aaveDeposited;
+    }
+
+    /*//////////////////////////////////////////////////////////////
                         PAUSE/UNPAUSE FUNCTIONALITY
     //////////////////////////////////////////////////////////////*/
 
@@ -665,5 +744,6 @@ contract UserVault is ERC20, IERC4626, Ownable {
  */
 interface IVaultFactory {
     function getCompoundAddress() external view returns (address);
+    function getAaveAddress() external view returns (address);
 }
 
