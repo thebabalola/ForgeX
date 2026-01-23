@@ -2,6 +2,22 @@
 
 A decentralized vault platform enabling users to create multiple ERC-4626 compliant vaults for automated yield generation on Base Mainnet.
 
+## Scenario
+
+A. On-chain Dollar Savings for Africans
+
+Users deposit USDC/USDT
+
+Receive a deposit token (dToken)
+
+Earn yield from low-risk DeFi
+
+Fully transparent reserves on-chain
+
+👉 Think: PiggyVest + Risevest + USDC, but on-chain
+
+
+
 ## Overview
 
 ForgeX is a comprehensive DeFi platform that allows users to:
