@@ -22,7 +22,7 @@ Set up Hardhat project with proper configuration for Base Mainnet. Configure com
 - [x] Install Hardhat and dependencies
 - [x] Configure `hardhat.config.js`:
   - [x] Solidity compiler version (^0.8.20)
-  - [x] Base Sepolia network configuration
+  - [x] Base Mainnet network configuration
   - [x] Gas optimization settings
   - [x] Etherscan verification plugin
 - [x] Create project folder structure:
@@ -37,7 +37,7 @@ Set up Hardhat project with proper configuration for Base Mainnet. Configure com
 
 - Use Hardhat version ^2.19.0 or latest
 - Install: `@nomicfoundation/hardhat-toolbox`
-- Configure Base Sepolia RPC: `https://sepolia.base.org`
+- Configure Base Mainnet RPC: `https://mainnet.base.org`
 - Chain ID: 8453
 - Solidity optimizer enabled with 200 runs
 
@@ -219,7 +219,7 @@ Integrate Chainlink Price Feeds into UserVault contract to provide real-time USD
   - [x] Test with different price scenarios
   - [x] Test price feed failures/fallbacks
 - [x] Documentation:
-  - [x] Document price feed addresses for Base Sepolia
+  - [x] Document price feed addresses for Base Mainnet
   - [x] Add NatSpec for new functions
   - [x] Update README with Chainlink integration
 
@@ -230,8 +230,8 @@ Integrate Chainlink Price Feeds into UserVault contract to provide real-time USD
 - Implement fallback mechanism for price feed failures
 - Consider staleness checks for price data
 - Price feeds for common assets:
-  - ETH/USD: Available on Base Sepolia
-  - USDC/USD: Available on Base Sepolia
+  - ETH/USD: Available on Base Mainnet
+  - USDC/USD: Available on Base Mainnet
   - Add more as needed
 
 **Base Mainnet Price Feed Addresses:**

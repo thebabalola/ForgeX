@@ -149,12 +149,11 @@ ETHERSCAN_API_KEY=your_etherscan_api_key
 
 ## Network Configuration
 
-### Base Sepolia Testnet
+### Base Mainnet
 
-- **Chain ID:** 84532
-- **RPC URL:** `https://sepolia.base.org`
-- **Explorer:** [Base Sepolia Explorer](https://sepolia.basescan.org/)
-- **Faucet:** [Base Sepolia Faucet](https://www.coinbase.com/faucets/base-ethereum-goerli-faucet)
+- **Chain ID:** 8453
+- **RPC URL:** `https://mainnet.base.org`
+- **Explorer:** [Base Mainnet Explorer](https://basescan.org/)
 
 ## Deployment
 
