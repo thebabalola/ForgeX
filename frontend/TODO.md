@@ -22,10 +22,11 @@ This file contains all GitHub issues for the ForgeX frontend. Each issue is read
 
 ### Issue #13: Transaction History & Activity Feed
 
-**Status:** ❌ PENDING  
+**Status:** ✅ COMPLETED  
 **Labels:** `frontend`, `feature`, `activity`  
 **Priority:** MEDIUM
 **Description:** Create a transaction history component showing all vault-related transactions.
+**Completed:** TransactionHistory component with full history table display, ActivityFeed component with recent activity stream, both with proper status tracking, amount formatting, and timestamp handling.
 
 ### Issue #14: User Profile & Settings
 
