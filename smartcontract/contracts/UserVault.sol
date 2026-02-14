@@ -386,8 +386,9 @@ contract UserVault is ERC20, IERC4626, Ownable {
      * @return price The price of 1 asset unit in USD (with 18 decimals)
      */
     function getAssetPriceUSD() public view returns (uint256) {
-        (, int256 price,,,) = _priceFeed.latestRoundData();
+        (, int256 price, , uint256 updatedAt, ) = _priceFeed.latestRoundData();
         require(price > 0, "UserVault: invalid price");
+        require(block.timestamp - updatedAt < 3 hours, "UserVault: stale price");
         
         uint8 feedDecimals = _priceFeed.decimals();
         return uint256(price) * 10**(18 - feedDecimals);
