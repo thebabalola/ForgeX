@@ -3,13 +3,13 @@
 ## 🚀 Chainlink Integration
 
 ### Issue #1: Price Feeds Integration
-**Status:** ❌ PENDING
+**Status:** ✅ COMPLETED
 **Description:** Integrate Chainlink Price Feeds to get real-time USD valuation of vault assets.
 - **Tasks:**
-  - [ ] Add `AggregatorV3Interface`.
-  - [ ] Update `UserVault` to store price feed address.
-  - [ ] Implement `getAssetPrice()` function.
-  - [ ] Implement `getTotalValueUSD()` function.
+  - [x] Add `AggregatorV3Interface`.
+  - [x] Update `UserVault` to store price feed address.
+  - [x] Implement `getAssetPrice()` function.
+  - [x] Implement `getTotalValueUSD()` function.
 
 ### Issue #2: Automation Integration
 **Status:** ❌ PENDING
