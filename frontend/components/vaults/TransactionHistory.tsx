@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import React, { useMemo } from 'react';
-import { formatUnits } from 'viem';
+import React, { useMemo } from "react";
+import { formatUnits } from "viem";
 import {
   Table,
   TableBody,
@@ -9,21 +9,21 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from "@/components/ui/table";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
 export interface Transaction {
   id: string;
   hash: string;
-  type: 'deposit' | 'withdraw' | 'mint' | 'redeem' | 'transfer';
-  status: 'pending' | 'success' | 'failed';
+  type: "deposit" | "withdraw" | "mint" | "redeem" | "transfer";
+  status: "pending" | "success" | "failed";
   amount: bigint;
   timestamp: number;
   from: string;
@@ -47,62 +47,62 @@ export function TransactionHistory({
     return [...transactions].sort((a, b) => b.timestamp - a.timestamp);
   }, [transactions]);
 
-  const getTypeColor = (type: Transaction['type']) => {
+  const getTypeColor = (type: Transaction["type"]) => {
     switch (type) {
-      case 'deposit':
-        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
-      case 'withdraw':
-        return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
-      case 'mint':
-        return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
-      case 'redeem':
-        return 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200';
-      case 'transfer':
-        return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200';
+      case "deposit":
+        return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200";
+      case "withdraw":
+        return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200";
+      case "mint":
+        return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200";
+      case "redeem":
+        return "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200";
+      case "transfer":
+        return "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200";
       default:
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200';
+        return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200";
     }
   };
 
-  const getStatusIcon = (status: Transaction['status']) => {
+  const getStatusIcon = (status: Transaction["status"]) => {
     switch (status) {
-      case 'success':
-        return '✓';
-      case 'failed':
-        return '✕';
-      case 'pending':
-        return '⧗';
+      case "success":
+        return "✓";
+      case "failed":
+        return "✕";
+      case "pending":
+        return "⧗";
       default:
-        return '−';
+        return "−";
     }
   };
 
-  const getStatusColor = (status: Transaction['status']) => {
+  const getStatusColor = (status: Transaction["status"]) => {
     switch (status) {
-      case 'success':
-        return 'text-green-600 dark:text-green-400';
-      case 'failed':
-        return 'text-red-600 dark:text-red-400';
-      case 'pending':
-        return 'text-yellow-600 dark:text-yellow-400';
+      case "success":
+        return "text-green-600 dark:text-green-400";
+      case "failed":
+        return "text-red-600 dark:text-red-400";
+      case "pending":
+        return "text-yellow-600 dark:text-yellow-400";
       default:
-        return 'text-gray-600 dark:text-gray-400';
+        return "text-gray-600 dark:text-gray-400";
     }
   };
 
   const formatAddress = (address: string) => {
-    if (!address) return '−';
+    if (!address) return "−";
     return `${address.slice(0, 6)}...${address.slice(-4)}`;
   };
 
   const formatDate = (timestamp: number) => {
-    if (!timestamp) return '−';
+    if (!timestamp) return "−";
     const date = new Date(timestamp * 1000);
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
@@ -145,7 +145,8 @@ export function TransactionHistory({
       <CardHeader>
         <CardTitle>Transaction History</CardTitle>
         <CardDescription>
-          {sortedTransactions.length} transaction{sortedTransactions.length !== 1 ? 's' : ''}
+          {sortedTransactions.length} transaction
+          {sortedTransactions.length !== 1 ? "s" : ""}
         </CardDescription>
       </CardHeader>
       <CardContent>
