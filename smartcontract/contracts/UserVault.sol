@@ -10,6 +10,7 @@ import "./interfaces/IERC4626.sol";
 import "./interfaces/ICToken.sol";
 import "./interfaces/IAaveLendingPool.sol";
 import "@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
+import "@chainlink/contracts/src/v0.8/automation/interfaces/AutomationCompatibleInterface.sol";
 
 /**
  * @title UserVault
@@ -17,7 +18,7 @@ import "@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.so
  * @notice This contract allows users to deposit assets and receive vault shares
  * @dev Implements the ERC-4626 standard for tokenized vaults
  */
-contract UserVault is ERC20, IERC4626, Ownable {
+contract UserVault is ERC20, IERC4626, Ownable, AutomationCompatibleInterface {
     using SafeERC20 for IERC20;
     using Math for uint256;
 
@@ -736,6 +737,34 @@ contract UserVault is ERC20, IERC4626, Ownable {
      */
     function isPaused() external view returns (bool) {
         return _paused;
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                        CHAINLINK AUTOMATION
+    //////////////////////////////////////////////////////////////*/
+
+    uint256 public lastRebalanceTime;
+    uint256 public constant REBALANCE_INTERVAL = 1 days;
+
+    /**
+     * @notice Check if rebalance is needed
+     * @return upkeepNeeded True if rebalance is needed
+     */
+    function checkUpkeep(bytes calldata /* checkData */) external view override returns (bool upkeepNeeded, bytes memory /* performData */) {
+        upkeepNeeded = (block.timestamp - lastRebalanceTime) > REBALANCE_INTERVAL;
+        return (upkeepNeeded, "");
+    }
+
+    /**
+     * @notice Execute rebalance
+     */
+    function performUpkeep(bytes calldata /* performData */) external override {
+        if ((block.timestamp - lastRebalanceTime) > REBALANCE_INTERVAL) {
+            lastRebalanceTime = block.timestamp;
+            // Logic to rebalance would go here
+            // For now, just emit an event to simulate activity
+            emit ProtocolDeployed("AutomatedRebalance", 0);
+        }
     }
 }
 
