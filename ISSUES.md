@@ -12,11 +12,11 @@
   - [x] Implement `getTotalValueUSD()` function.
 
 ### Issue #2: Automation Integration
-**Status:** ❌ PENDING
+**Status:** ✅ COMPLETED
 **Description:** Use Chainlink Automation for rebalancing.
 - **Tasks:**
-  - [ ] Implement `checkUpkeep` and `performUpkeep`.
-  - [ ] Register with Chainlink Automation.
+  - [x] Implement `checkUpkeep` and `performUpkeep`.
+  - [x] Register with Chainlink Automation.
 
 ## 🛠️ Core Features
 
