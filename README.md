@@ -259,6 +259,21 @@ ForgeX is designed to integrate with Chainlink services for enhanced functionali
 
 ---
 
+#### Phase 4: Uniswap v4 Hook Integration (UHI Project)
+**Status:** In Progress (UHI8 Hookathon Start: March 2, 2026)
+
+- **Forge-Native Yield Hooks**
+  - Enable ForgeX ERC-4626 vault shares to serve as active liquidity in Uniswap v4 pools.
+  - Implement **Yield-Aware Hooks** that distribute vault-accrued interest to LPs.
+  - Maximize capital efficiency for African savings users by layering trading fees on top of DeFi yield.
+
+**Implementation:**
+- Integrate `IHooks` interface with `UserVault.sol` logic.
+- Build specialized liquidity pools for vault-wrapped assets.
+- Deploy UHI capstone project on Base Mainnet.
+
+---
+
 ### Additional Planned Features
 
 - **Multi-signature Admin Controls** - Enhanced security for protocol management
